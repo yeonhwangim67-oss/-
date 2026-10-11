@@ -125,13 +125,21 @@ input { font: inherit; }
 
 /* ---------- 본문 레이아웃 ---------- */
 .layout {
-  display: grid; grid-template-columns: 320px minmax(0, 1fr); grid-template-rows: auto 1fr;
-  grid-template-areas: "side pending" "side log";
-  column-gap: 24px; padding: 24px; max-width: 1400px; margin: 0 auto;
+  display: grid; grid-template-columns: 300px minmax(0, 1fr) 300px; grid-template-rows: auto 1fr;
+  grid-template-areas: "side pending panel" "side log panel";
+  column-gap: 24px; padding: 24px; max-width: 1600px; margin: 0 auto;
 }
 .side { grid-area: side; align-self: start; }
+.panel { grid-area: panel; position: sticky; top: calc(env(safe-area-inset-top, 0px) + 110px); }
 #pending { grid-area: pending; }
 .log { grid-area: log; }
+@media (max-width: 1200px) {
+  .layout { grid-template-columns: 300px minmax(0, 1fr); grid-template-rows: auto auto 1fr; grid-template-areas: "side pending" "side panel" "side log"; }
+  .panel { position: static; margin-bottom: 16px; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); align-items: start; }
+}
+@media (max-width: 700px) {
+  .panel { grid-template-columns: minmax(0, 1fr); }
+}
 .side { display: flex; flex-direction: column; gap: 14px; }
 .card { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 18px 22px; }
 .card h3 { font-family: var(--serif); font-size: 22px; margin: 0 0 4px; }
@@ -206,7 +214,7 @@ input { font: inherit; }
 
 /* ---------- 반응형 ---------- */
 @media (max-width: 900px) {
-  .layout { grid-template-columns: minmax(0, 1fr); grid-template-areas: "pending" "side" "log"; padding: 16px; }
+  .layout { grid-template-columns: minmax(0, 1fr); grid-template-rows: none; grid-template-areas: "pending" "panel" "side" "log"; padding: 16px; }
   .side { margin-bottom: 16px; }
   .topbar { flex-wrap: wrap; gap: 12px 16px; padding: 12px 16px; }
   .age { min-width: 0; }
@@ -217,8 +225,12 @@ input { font: inherit; }
   .form-grid { grid-template-columns: 1fr; }
 }
 @media (max-width: 480px) {
-  .controls { margin-left: 0; width: 100%; justify-content: space-between; }
+  .controls { margin-left: 0; width: 100%; flex-wrap: wrap; gap: 8px; }
+  .speed { flex: 1 1 100%; }
+  .speed button { flex: 1; padding: 7px 0; }
+  .controls > .ghost { flex: 1; padding: 7px 0; }
 }
+.ghost, .seg button { white-space: nowrap; }
 
 /* ---------- 무작위 / 가문 ---------- */
 .d-RANDOM { color: var(--muted); }

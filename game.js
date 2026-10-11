@@ -95,7 +95,7 @@ function fmtBounty(man) {
   return `${eok ? eok + '억 ' : ''}${rest ? rest + '만 ' : ''}베리`;
 }
 function addBounty(base) {
-  const raw = R(Math.round(base * 0.6), Math.round(base * 1.4)) + G.job.bounty * 0.18;
+  const raw = R(Math.round(base * 0.6), Math.round(base * 1.4)) + G.job.bounty * 0.24;
   G.job.bounty += Math.round(raw * (G.lineage.bountyMul || 1) / 100) * 100;
   return `현상금이 ${fmtBounty(G.job.bounty)}(으)로 올랐다.`;
 }
@@ -369,8 +369,12 @@ function upkeep() {
   const starving = s.food <= 0;
   if (starving) add('hp', -Math.round((G.age < 15 ? 3 : 5) * d.dmg));
   else if (s.food >= 15) {
-    const r = G.age < 18 ? d.kidRegen : 1;          // 소수점은 격계절로
-    add('hp', Math.floor(r) + (r % 1 && G.ticks % 2 ? 1 : 0));
+    // 자연 회복: 계절마다 조금씩, 자연 상한(아이 75 / 어른 80)까지만
+    const cap = Math.min(maxHp(), G.age < 18 ? NATURAL_HP.kid : NATURAL_HP.adult);
+    G.regen = (G.regen || 0) + (G.age < 18 ? d.kidRegen : 0.5);
+    const r = Math.floor(G.regen);
+    G.regen -= r;
+    if (r && s.hp < cap) add('hp', Math.min(r, cap - s.hp));
   }
   if (G.age >= 50) add('hp', -1);
 
@@ -410,7 +414,7 @@ function pickEvent() {
     let w = e.w;
     if (e.tag === 'good') w *= d.goodW;
     if (e.tag === 'bad') w *= d.badW;
-    if (/^(p|n)_/.test(e.id)) w *= 1.5;
+    if (/^(p|n)_/.test(e.id)) w *= 2;
     const seen = G.seen[e.id];
     if (seen !== undefined && G.ticks - seen < 24) w *= 0.5;
     return w;
@@ -487,7 +491,7 @@ function renderTop() {
   else if (G.paused) status = '일시정지';
   else {
     const left = Math.ceil(((G.ticks + 1) * SEASON_SEC - G.time) / G.speed);
-    status = `다음 계절까지 ${left}초 · 이벤트 확률 30%`;
+    status = `다음 계절까지 ${left}초 · 이벤트 확률 ${Math.round(EVENT_CHANCE * 100)}%`;
   }
   $('#status-line').innerHTML = status;
   $('#btn-pause').textContent = G.paused ? '재개' : '일시정지';
@@ -557,10 +561,12 @@ function renderSide() {
     </div>
     <div class="card"><div class="label">직업</div><div class="big">${jobTitle()}</div><div class="sub" style="margin-top:4px">${jobSub}</div></div>
     <div class="card">${STATS.map(statRow).join('')}</div>
-    ${skillsCard()}
-    <div class="card"><div class="label">악마의 열매</div>${fruit}</div>
     <div class="card"><div class="label">기록</div><div class="chips">${G.records.map((r, i) => `<span class="chip${i ? ' gold' : ''}">${esc(r)}</span>`).join('')}</div></div>
     <div class="card"><div class="label">시드</div><span class="seed-val">${esc(G.seed)}</span></div>`;
+
+  // 오른쪽 패널: 직접 고르고 키워가는 것들
+  $('#panel').innerHTML = `${skillsCard()}
+    <div class="card"><div class="label">악마의 열매</div>${fruit}</div>`;
 }
 
 function deltaChips(ds) {
@@ -732,7 +738,7 @@ function init() {
     const b = e.target.closest('.choice');
     if (b && !b.disabled) choose(+b.dataset.i);
   });
-  $('#side').addEventListener('click', e => {
+  $('#panel').addEventListener('click', e => {
     const b = e.target.closest('.focus-chip');
     if (!b || !G) return;
     G.focus = b.dataset.focus;
@@ -770,4 +776,4 @@ function init() {
 init();
 
 // 디버그/테스트용
-window.__game = { get G() { return G; }, tick, choose, power, EVENTS };
+window.__game = { get G() { return G; }, tick, choose, power, renderAll, EVENTS };

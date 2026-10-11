@@ -51,11 +51,13 @@ const EVENTS = [
     ] },
 
   /* =================== 유년기 (0~9) =================== */
-  { id: 'c_beach', w: 2, cond: () => G.age >= 3 && G.age < 10 && G.place.id !== 'skypiea', title: '바닷가의 보물',
-    run: () => {
-      if (P(0.65)) { add('wealth', R(1, 4)); return pick(['파도에 밀려온 반짝이는 조개껍데기와 동전 몇 닢을 주웠다.', '모래 속에서 녹슨 은화 한 닢을 찾았다.', '빈 병 속에서 누군가의 편지를 발견했다. 함께 들어 있던 동전은 당신 몫이다.']); }
-      hurt(R(2, 4)); return '바위에서 미끄러져 무릎이 까졌다.';
-    } },
+  { id: 'c_beach', w: 2, cond: () => G.age >= 3 && G.age < 10 && G.place.id !== 'skypiea', title: '바닷가에서',
+    text: '썰물이 빠진 바닷가. 오늘은 무엇을 하며 놀까?',
+    choices: [
+      { t: '조개와 동전을 줍는다', run: () => { if (P(0.65)) { add('wealth', R(1, 4)); return pick(['반짝이는 조개껍데기와 동전 몇 닢을 주웠다.', '모래 속에서 녹슨 은화 한 닢을 찾았다.']); } hurt(3); return '바위에서 미끄러져 무릎이 까졌다.'; } },
+      { t: '파도와 겨루며 헤엄친다', tag: '위험', run: () => { if (P(0.75)) { train(2); return '파도를 넘으며 팔다리에 힘이 붙었다.'; } hurt(R(4, 7)); return '역류에 휩쓸렸다가 어부에게 건져졌다.'; } },
+      { t: '병 속 편지를 찾는다', run: () => { if (P(0.4)) { add('conn', 3); return '머나먼 섬 아이의 편지였다. 답장을 써서 다시 띄워 보냈다.'; } return '빈 병만 잔뜩 주웠다.'; } },
+    ] },
   { id: 'c_bully', w: 2, cond: () => G.age >= 5 && G.age < 13, title: '골목대장',
     text: '동네 골목대장이 당신의 간식을 빼앗으려 한다.',
     choices: [
@@ -80,8 +82,12 @@ const EVENTS = [
         } },
     ] },
   { id: 'c_navyvisit', w: 1.5, cond: () => G.age >= 4 && G.age < 14 && !G.place.pirateLand, title: '해군 함대 방문',
-    run: () => { add('rep', 2); add('conn', 2); G.flags.inspiredNavy = true;
-      return '"정의"라고 적힌 하얀 코트를 걸친 장교가 아이들에게 손을 흔들었다. 오래 기억에 남을 장면이다.'; } },
+    text: '"정의"라고 적힌 하얀 코트를 걸친 장교들이 항구에 내렸다.',
+    choices: [
+      { t: '손을 흔든다', run: () => { add('rep', 2); G.flags.inspiredNavy = true; return '장교가 경례로 답해 주었다. 오래 기억에 남을 장면이다.'; } },
+      { t: '이것저것 물어본다', run: () => { add('conn', 3); G.flags.inspiredNavy = true; return '젊은 병사가 귀찮아하면서도 군함 이야기를 들려주었다.'; } },
+      { t: '군함에 몰래 올라탄다', tag: '위험', run: () => { if (P(0.5)) { train(2); add('conn', 2); return '갑판을 구경하다 들켰지만 함장이 껄껄 웃으며 포 쏘는 걸 보여줬다.'; } hurt(4); add('rep', -2); return '들켜서 엉덩이를 맞고 쫓겨났다.'; } },
+    ] },
   { id: 'c_cold', w: 1.5, tag: 'bad', cond: () => G.age < 12, title: '감기',
     run: () => { hurt(R(2, 4)); return pick(['콧물을 훌쩍이며 며칠을 보냈다.', '비를 맞고 놀다가 감기에 걸렸다.', '기침이 멎지 않아 한동안 집에만 있었다.']); } },
   { id: 'c_fever', w: 0.6, cd: 24, tag: 'bad', cond: () => G.age < 12, title: '열병',
@@ -93,7 +99,14 @@ const EVENTS = [
   { id: 'c_friend', w: 2, tag: 'good', cond: () => G.age >= 4 && G.age < 16, title: '새 친구',
     run: () => { add('conn', R(3, 6)); return pick(['이웃 마을에서 온 아이와 친구가 되었다. 둘은 함께 바다를 누비자고 약속했다.', '말수 적은 대장장이 아들과 친해졌다.', '거짓말쟁이로 소문난 아이였지만 같이 노는 건 즐거웠다.']); } },
   { id: 'c_festival', w: 1.5, tag: 'good', cond: () => G.age < 18, title: '마을 축제',
-    run: () => { add('food', R(4, 8)); add('conn', 2); return pick(['풍어제가 열렸다. 배불리 먹고 늦게까지 춤췄다.', '불꽃놀이가 밤하늘을 수놓았다.', '씨름 대회 구경에 목이 쉬었다.']); } },
+    text: () => pick(['풍어제가 열렸다. 온 마을이 들떠 있다.', '불꽃놀이 축제의 날이다.', '수확제가 열렸다. 광장에 음식 냄새가 가득하다.']),
+    choices: [
+      { t: '배불리 먹는다', run: () => { add('food', R(5, 9)); add('hp', 3); return '배가 터질 때까지 먹었다.'; } },
+      { t: '씨름 대회에 나간다', enemy: 22, run: () => fightResult(fight(22, 0, '동네 씨름꾼'),
+          () => { add('rep', 5); add('food', 4); return '우승했다! 상품으로 커다란 고기를 받았다.'; },
+          () => '첫판에 모래판에 처박혔다.') },
+      { t: '노점 일을 돕는다', run: () => { add('wealth', R(2, 5)); add('conn', 2); return '하루 종일 꼬치를 굽고 용돈을 받았다.'; } },
+    ] },
   { id: 'c_lost', w: 1, tag: 'bad', cond: () => G.age >= 4 && G.age < 10, title: '길을 잃다',
     run: () => {
       if (P(0.4)) { train(3); return '숲에서 길을 잃었다가 이상한 노인을 만나 사흘간 몸 쓰는 법을 배웠다.'; }
@@ -112,8 +125,13 @@ const EVENTS = [
       { t: '데려와 돌본다', run: () => { add('food', -3); add('conn', 3); G.flags.pet = true; rec('작은 친구가 생김'); return '정성껏 돌보자 어디든 졸졸 따라다니게 되었다.'; } },
       { t: '그냥 둔다', run: () => '마음이 쓰였지만 지나쳤다.' },
     ] },
-  { id: 'c_fishing', w: 1.5, tag: 'good', cond: () => G.age >= 5 && G.age < 15 && !G.place.pirateLand, title: '첫 낚시',
-    run: () => { add('food', R(3, 7)); return pick(['팔뚝만 한 물고기를 낚았다! 저녁 반찬이 생겼다.', '하루 종일 앉아 있었지만 한 마리도 못 잡았다… 마지막에 겨우 한 마리.', '바다왕류의 새끼를 낚을 뻔했다.']); } },
+  { id: 'c_fishing', w: 1.5, tag: 'good', cond: () => G.age >= 5 && G.age < 15 && !G.place.pirateLand, title: '낚시',
+    text: '낚싯대를 메고 나왔다. 어디로 갈까?',
+    choices: [
+      { t: '방파제에서 낚는다', run: () => { add('food', R(3, 6)); return pick(['팔뚝만 한 물고기를 낚았다!', '종일 앉아 있다가 마지막에 겨우 한 마리.']); } },
+      { t: '쪽배로 먼바다에 나간다', tag: '위험', run: () => { if (P(0.6)) { add('food', R(8, 12)); train(1); return '커다란 참치를 끌어올렸다! 마을 어른들이 놀랐다.'; } hurt(R(4, 8)); return '바다왕류 새끼에게 쪽배가 뒤집혔다.'; } },
+      { t: '잡은 걸 시장에 판다', run: () => { add('wealth', R(2, 4)); return '몇 마리 낚아 시장에 팔았다.'; } },
+    ] },
   { id: 'c_model', w: 1, cond: () => G.age >= 6 && G.age < 14, title: '모형 배',
     run: () => { add('conn', 2); train(1); return '나뭇조각으로 작은 범선을 만들었다. 언젠가 진짜 배를 만들 거다.'; } },
   { id: 'c_story', w: 1, once: true, cond: () => G.age >= 4 && G.age < 12, title: '할머니의 옛이야기',
@@ -129,11 +147,23 @@ const EVENTS = [
 
   /* =================== 소년기 (10~17) =================== */
   { id: 't_pirate_train', w: 3, tag: 'good', cond: () => G.tree === 'pirate' && G.age < 18, title: '몰래 하는 수련',
-    run: () => { train(R(2, 3)); add('hp', 2); return pick(['밤마다 절벽에서 바다로 뛰어드는 연습을 했다.', '어선에 몰래 올라 노 젓는 법을 익혔다.', '맨손으로 야자수를 오르내렸다.']); } },
+    text: '해적이 되려면 강해져야 한다. 오늘은 무엇을 할까?',
+    choices: [
+      { t: '절벽 다이빙', run: () => { train(R(2, 3)); add('hp', 2); return '밤마다 절벽에서 바다로 뛰어드는 연습을 했다.'; } },
+      { t: '나무 막대 검술', run: () => { learn('sword', R(3, 5)); return '나무 막대로 검술을 흉내 내며 손바닥이 터졌다.'; } },
+      { t: '어선에서 노 젓기', run: () => { train(1); G.flags.navigation = true; return '어선에 몰래 올라 노 젓는 법과 물길을 익혔다.'; } },
+      { t: '해적 이야기 수집', run: () => { add('conn', 4); return '주점을 기웃거리며 해적들의 이름과 섬 이야기를 외웠다.'; } },
+    ] },
   { id: 't_tavern', w: 1.5, cond: () => G.tree === 'pirate' && G.age < 18 && !G.place.pirateLand, title: '주점의 해적 이야기',
     run: () => { add('conn', 4); return pick(['주점 구석에서 늙은 해적이 위대한 항로 이야기를 들려주었다.', '술 취한 항해사가 「붉은 흙의 대륙」 너머의 바다 이야기를 했다.', '전직 해적 요리사가 신세계의 섬들을 그려 보였다.']); } },
   { id: 't_navy_train', w: 3, tag: 'good', cond: () => G.tree === 'navy' && G.age < 18, title: '해군 지망생 훈련',
-    run: () => { train(R(2, 3)); add('rep', 2); return pick(['지부 훈련장 밖에서 병사들의 구령을 따라 했다.', '매일 새벽 모래사장을 달렸다.', '퇴역 해군에게 육식 이야기를 들었다.']); } },
+    text: '해군이 되려면 무엇이 필요할까?',
+    choices: [
+      { t: '새벽 구보', run: () => { train(R(2, 3)); add('hp', 2); return '매일 새벽 모래사장을 달렸다.'; } },
+      { t: '목검 훈련', run: () => { learn('sword', R(3, 5)); return '지부 훈련장 밖에서 병사들의 검술을 따라 했다.'; } },
+      { t: '해도 공부', run: () => { G.flags.navigation = true; add('rep', 2); return '해도 읽는 법과 신호기 다루는 법을 익혔다.'; } },
+      { t: '지부에서 잔심부름', run: () => { add('conn', 3); add('rep', 2); return '병사들 심부름을 하며 얼굴을 익혔다.'; } },
+    ] },
   { id: 't_report', w: 1.5, cond: () => G.tree === 'navy' && G.age < 18, title: '수배자 제보',
     run: () => { add('rep', 5); add('wealth', 3); return '수배서와 똑같은 얼굴을 보고 해군에 신고했다. 작은 포상금을 받았다.'; } },
   { id: 't_dojo', w: 2, cond: () => G.age >= 9 && G.age < 18 && G.skills.sword < 2, title: '검술 도장',
@@ -152,10 +182,17 @@ const EVENTS = [
           if (P(0.6)) { add('wealth', R(4, 10)); add('rep', -5); return '아무도 눈치채지 못했다.'; }
           add('rep', -10); hurt(5); return '붙잡혀 실컷 얻어맞고 마을에 소문이 났다.';
         } },
+      { t: '상인에게 조심하라고 알린다', run: () => { add('rep', 3); add('conn', 2); if (P(0.4)) { add('wealth', 3); return '상인이 고맙다며 동전을 쥐여주었다.'; } return '상인이 고개를 끄덕였다.'; } },
       { t: '참는다', run: () => { add('rep', 1); return '양심을 지켰다.'; } },
     ] },
-  { id: 't_work', w: 2, tag: 'good', cond: () => G.age >= 10 && G.age < 18, title: '일손 돕기',
-    run: () => { add('wealth', R(2, 5)); add('food', 3); return pick(['어부 아저씨의 그물 정리를 도왔다.', '식당에서 설거지를 하고 품삯을 받았다.', '항구에서 짐을 날랐다.', '대장간에서 풀무질을 했다.']); } },
+  { id: 't_work', w: 2, tag: 'good', cond: () => G.age >= 10 && G.age < 18, title: '일거리',
+    text: '마을에 일손이 필요하다는 소식이 들렸다.',
+    choices: [
+      { t: '어부 그물 정리', run: () => { add('wealth', R(2, 4)); add('food', 4); return '품삯 대신 생선을 넉넉히 받았다.'; } },
+      { t: '항구 짐 나르기', run: () => { add('wealth', R(3, 5)); train(1); hurt(2); return '허리가 끊어질 것 같지만 돈은 쏠쏠했다.'; } },
+      { t: '대장간 풀무질', run: () => { add('wealth', R(2, 4)); learn('sword', 2); return '대장장이가 칼 손질하는 법을 보여주었다.'; } },
+      { t: '식당 설거지', run: () => { add('wealth', R(2, 3)); add('conn', 2); add('food', 2); return '손님들 이야기를 엿들으며 접시를 닦았다.'; } },
+    ] },
   { id: 't_cabinboy', w: 1, once: true, cond: () => G.age >= 12 && G.age < 18 && !G.place.pirateLand, title: '견습 선원',
     text: '상선 선장이 한 철 동안 잡일할 소년을 구한다.',
     choices: [
@@ -201,7 +238,14 @@ const EVENTS = [
       '분노가 터진 순간 주변의 사람들이 거품을 물고 쓰러졌다. 왕의 자질, 패왕색이 깨어났다.',
       '위기 속에서 내지른 고함에 짐승들이 일제히 기절했다. 몸속 깊은 곳의 무언가가 깨어났다.']); } },
   { id: 'g_famine', w: 1.5, tag: 'bad', cond: () => G.age >= 6, title: '흉년',
-    run: () => { add('food', -R(5, 10)); return pick(['바다도 땅도 인색한 해였다. 먹을 것이 바닥나간다.', '해류가 바뀌어 물고기 떼가 사라졌다.', '병충해로 밭이 망가졌다.']); } },
+    text: () => pick(['바다도 땅도 인색한 해다. 먹을 것이 바닥나간다.', '해류가 바뀌어 물고기 떼가 사라졌다.', '병충해로 밭이 망가졌다.']),
+    choices: [
+      { t: '허리띠를 졸라맨다', run: () => { add('food', -R(6, 10)); return '하루 한 끼로 버텼다.'; } },
+      { t: '돈을 주고 식량을 산다', need: '재산 8', cond: () => G.stats.wealth >= 8, run: () => { add('wealth', -8); add('food', -2); return '비싼 값을 치르고 쌀을 구했다.'; } },
+      { t: '숲에서 사냥한다', enemy: 25, run: () => fightResult(fight(25, 0.02, '산짐승'),
+          () => { add('food', 4); return '멧돼지를 잡아 이웃과 나눴다.'; },
+          () => { add('food', -6); return '빈손으로 상처만 입고 돌아왔다.'; }) },
+    ] },
   { id: 'g_rest', w: 2, tag: 'good', title: '평온한 계절',
     run: () => { add('hp', R(3, 8)); return pick(['오랜만에 푹 쉬었다.', '따뜻한 햇볕 아래 낮잠을 잤다.', '아무 일 없는 하루하루가 이어졌다.', '좋은 바람이 부는 계절이었다.']); } },
   { id: 'g_accident', w: 1, tag: 'bad', cond: () => G.age >= 8, title: '사고',
@@ -215,10 +259,11 @@ const EVENTS = [
   { id: 'g_treasure', w: 1, cond: () => G.age >= 12, title: '보물 지도',
     text: '낡은 병 속에서 X 표시가 그려진 지도를 찾았다.',
     choices: [
-      { t: '찾으러 간다', tag: '위험', run: () => {
-          if (P(0.5)) { add('wealth', R(10, 25)); return '동굴 깊은 곳에서 녹슨 상자를 찾았다. 금화가 가득하다!'; }
+      { t: '혼자 찾으러 간다', tag: '위험', run: () => {
+          if (P(0.5)) { add('wealth', R(12, 25)); return '동굴 깊은 곳에서 녹슨 상자를 찾았다. 금화가 가득하다!'; }
           hurt(R(5, 12)); return '함정이었다. 빈손으로 상처만 입었다.';
         } },
+      { t: '친구들과 함께 간다', run: () => { add('conn', 3); if (P(0.6)) { add('wealth', R(5, 10)); return '보물을 찾아 사이좋게 나눴다.'; } return '보물은 없었지만 즐거운 모험이었다.'; } },
       { t: '지도를 판다', run: () => { add('wealth', 5); return '호기심 많은 상인에게 지도를 넘겼다.'; } },
     ] },
   { id: 'g_merchant', w: 1.5, cond: () => G.age >= 12, title: '떠돌이 상인',
@@ -226,7 +271,8 @@ const EVENTS = [
     choices: [
       { t: '식량을 산다', need: '재산 5', cond: () => G.stats.wealth >= 5, run: () => { add('wealth', -5); add('food', 12); return '말린 고기와 쌀을 넉넉히 샀다.'; } },
       { t: '정보를 산다', need: '재산 3', cond: () => G.stats.wealth >= 3, run: () => { add('wealth', -3); add('conn', 4); return '여러 섬의 소문과 사람 이름을 얻었다.'; } },
-      { t: '그냥 보낸다', run: () => '상인은 어깨를 으쓱하고 떠났다.' },
+      { t: '약을 산다', need: '재산 6', cond: () => G.stats.wealth >= 6, run: () => { add('wealth', -6); add('hp', R(8, 14)); return '쓴 약초 환을 먹자 몸이 가벼워졌다.'; } },
+      { t: '남는 식량을 판다', need: '식량 20', cond: () => G.stats.food >= 20, run: () => { add('food', -10); add('wealth', 5); return '남는 식량을 넘기고 돈을 받았다.'; } },
     ] },
   { id: 'g_brawl', w: 1.5, cond: () => G.age >= 16, title: '주점 난투',
     text: '주점에서 시비가 붙었다. 술병이 날아다닌다.',
@@ -234,6 +280,8 @@ const EVENTS = [
       { t: '끼어든다', enemy: 32, run: () => fightResult(fight(32, 0.03, '주정뱅이'),
           () => { add('conn', 3); add('rep', 2); return '난투를 정리하자 주점 주인이 술을 샀다.'; },
           () => '술병에 머리를 맞고 기절했다.') },
+      { t: '술값을 내고 말린다', need: '재산 3', cond: () => G.stats.wealth >= 3, run: () => { add('wealth', -3); add('conn', 4); return '"오늘 술은 내가 산다!" 싸움이 웃음으로 끝났다.'; } },
+      { t: '구경하며 배운다', run: () => { train(1); return '덩치 큰 놈들이 어떻게 싸우는지 지켜봤다.'; } },
       { t: '조용히 나간다', run: () => '괜한 싸움에 휘말리지 않았다.' },
     ] },
   { id: 'g_celestial', w: 0.8, tag: 'bad', cond: () => G.age >= 8 && !G.place.pirateLand, title: '천룡인 행차',
@@ -324,8 +372,13 @@ const EVENTS = [
 
   /* =================== 민간인 =================== */
   { id: 'v_work', w: 3, tag: 'good', cond: () => isCivil(), title: '생업',
-    run: () => { add('wealth', R(2, 6) + (G.flags.shop ? 3 : 0)); add('food', 2);
-      return G.flags.shop ? pick(['가게가 북적였다.', '단골손님이 늘었다.']) : pick(['고기잡이가 잘 됐다.', '조선소에서 품삯을 받았다.', '밭일을 했다.', '항구에서 짐을 날랐다.']); } },
+    text: () => G.flags.shop ? '오늘도 가게 문을 열었다.' : '오늘도 하루가 시작됐다.',
+    choices: [
+      { t: '열심히 일한다', run: () => { add('wealth', R(3, 6) + (G.flags.shop ? 3 : 0)); hurt(2); return G.flags.shop ? '가게가 북적였다.' : pick(['고기잡이가 잘 됐다.', '조선소에서 품삯을 받았다.', '밭일을 했다.']); } },
+      { t: '부업에 손댄다', tag: '위험', run: () => { if (P(0.5)) { add('wealth', R(6, 12)); return '수상한 화물 운반으로 큰돈을 만졌다.'; } add('wealth', -R(2, 6)); add('rep', -3); return '사기를 당했다.'; } },
+      { t: '이웃을 돕는다', run: () => { add('conn', 3); add('rep', 2); add('food', 2); return '지붕 고치는 걸 도와주고 저녁을 얻어먹었다.'; } },
+      { t: '하루 쉰다', run: () => { add('hp', R(4, 7)); return '모처럼 늦잠을 잤다.'; } },
+    ] },
   { id: 'v_shop', w: 1, once: true, cond: () => isCivil() && G.age >= 20 && G.stats.wealth >= 20, title: '가게를 열 기회',
     text: '항구 앞 빈 가게가 싸게 나왔다.',
     choices: [
@@ -357,8 +410,15 @@ const EVENTS = [
 
   /* =================== 해적 =================== */
   { id: 'p_recruit', w: 3, tag: 'good', cond: () => isPirate(), title: '동료 영입',
-    run: () => { add('crew', R(4, 10) + Math.floor(G.stats.conn / 15)); add('conn', 2);
-      return pick(['주점에서 만난 검객이 배에 올랐다.', '난파선에서 구한 생존자들이 동료가 되었다.', '천재 항해사가 합류했다!', '요리사가 따라오겠다고 우겼다.', '해군에서 탈영한 포수가 배에 올랐다.', '거인족 전사가 동료가 되었다!']); } },
+    text: () => pick(['주점에서 만난 검객이 배에 태워 달라고 한다.', '난파선 생존자들이 동료가 되고 싶어 한다.', '해군에서 탈영한 포수가 찾아왔다.', '떠돌이 요리사가 따라오겠다고 우긴다.']),
+    choices: [
+      { t: '받아들인다', run: () => { add('crew', R(4, 9) + Math.floor(G.stats.conn / 15)); add('conn', 2); return '새 동료들이 배에 올랐다.'; } },
+      { t: '실력을 시험한다', enemy: () => Math.round(power() * 0.8 / D().enemy), run: () => fightResult(fight(Math.round(power() * 0.8 / D().enemy), 0, '지원자'),
+          () => { add('crew', R(3, 6)); train(1); return '시험을 통과시킨 녀석들만 받았다. 정예가 늘었다.'; },
+          () => { add('crew', R(6, 10)); add('rep', -2); return '오히려 지원자에게 졌다. 다 받아줄 수밖에.'; }) },
+      { t: '선원 모집 공고를 낸다', need: '재산 10', cond: () => G.stats.wealth >= 10, run: () => { add('wealth', -10); add('crew', R(8, 14)); return '현수막을 걸자 지원자가 줄을 섰다.'; } },
+      { t: '거절한다', run: () => '아직 배에 자리가 없다.' },
+    ] },
   { id: 'p_navy', w: 3, tag: 'bad', cond: () => isPirate(), title: '해군의 추격',
     text: () => `해군 군함이 「${G.crewName}」의 뒤를 쫓는다!`,
     choices: [
@@ -368,6 +428,10 @@ const EVENTS = [
       { t: '도주한다', tag: () => `성공 ${Math.round(escapeChance(0.6) * 100)}%`, run: () => {
           if (P(escapeChance(0.6))) return '안개 속으로 빠져나갔다.';
           hurt(R(5, 10)); add('crew', -R(1, 4)); return '포격을 맞으며 간신히 도망쳤다.';
+        } },
+      { t: '깃발을 내리고 상선인 척한다', run: () => {
+          if (P(0.45 + G.stats.conn / 300)) { add('conn', 1); return '"평범한 상선입니다~" 군함이 그냥 지나갔다.'; }
+          add('crew', -R(2, 4)); add('wealth', -R(3, 8)); return '들켰다. 짐을 버리고 겨우 달아났다.';
         } },
     ] },
   { id: 'p_vice', w: 1.5, tag: 'bad', cond: () => isPirate() && G.job.bounty >= 20000, title: '중장의 함대',
@@ -402,12 +466,21 @@ const EVENTS = [
         } },
     ] },
   { id: 'p_hunter', w: 1.5, tag: 'bad', cond: () => isPirate() && G.job.bounty > 0, title: '현상금 사냥꾼',
-    run: () => fightResult(fight(pirateEnemy(-5), 0.08, '현상금 사냥꾼'),
-      () => pick(['당신의 목을 노린 현상금 사냥꾼을 가볍게 돌려보냈다.', '복면을 쓴 사냥꾼 셋을 바다에 던졌다.']),
-      () => '기습을 당해 크게 다쳤다.') },
+    text: '복면을 쓴 현상금 사냥꾼이 당신의 수배서를 흔들며 다가온다.',
+    choices: [
+      { t: '맞선다', enemy: () => pirateEnemy(-5), run: () => fightResult(fight(pirateEnemy(-5), 0.08, '현상금 사냥꾼'),
+          () => '현상금 사냥꾼을 가볍게 돌려보냈다.',
+          () => '기습을 당해 크게 다쳤다.') },
+      { t: '동료로 포섭한다', run: () => { if (P(0.3 + G.stats.conn / 200)) { add('crew', 2); add('conn', 3); return '"이 선장 밑이라면 재밌겠군." 사냥꾼이 칼을 거뒀다.'; } hurt(R(5, 10)); return '말이 끝나기도 전에 칼이 날아왔다.'; } },
+      { t: '도망친다', tag: () => `성공 ${Math.round(escapeChance(0.55) * 100)}%`, run: () => { if (P(escapeChance(0.55))) return '시장 인파 속으로 사라졌다.'; hurt(R(4, 8)); return '등에 칼을 맞으며 도망쳤다.'; } },
+    ] },
   { id: 'p_island', w: 2, tag: 'good', cond: () => isPirate(), title: '미지의 섬',
-    run: () => { add('food', R(10, 20)); if (P(0.25)) { add('wealth', R(8, 15)); return '고대 유적이 남은 섬에서 보물까지 찾았다!'; }
-      return pick(['열대 과일이 가득한 섬에서 식량을 채웠다.', '공룡이 사는 섬에서 거대한 고기를 얻었다.', '겨울 섬에서 사냥을 했다.']); } },
+    text: () => pick(['지도에 없는 섬이 보인다.', '공룡 울음소리가 들리는 섬에 닿았다.', '눈 덮인 겨울 섬이 나타났다.']),
+    choices: [
+      { t: '깊숙이 탐험한다', tag: '위험', run: () => { if (P(0.5)) { add('wealth', R(10, 18)); add('food', 5); return '고대 유적에서 보물을 찾았다!'; } hurt(R(5, 10)); add('food', 5); return '괴수에게 쫓겨 도망쳐 나왔다.'; } },
+      { t: '식량만 챙긴다', run: () => { add('food', R(10, 18)); return '사냥과 채집으로 창고를 채웠다.'; } },
+      { t: '정박해 쉰다', run: () => { add('hp', R(8, 12)); add('crew', 1); return '해변에서 며칠을 푹 쉬었다.'; } },
+    ] },
   { id: 'p_sky', w: 0.8, once: true, cond: () => isPirate(), title: '하늘로 가는 해류',
     text: '기록 지침이 하늘을 가리킨다. 녹 업 스트림을 타면 하늘섬에 갈 수 있다는데…',
     choices: [
@@ -503,7 +576,12 @@ const EVENTS = [
         } },
     ] },
   { id: 'n_patrol', w: 2.5, tag: 'good', cond: () => isNavy(), title: '순찰 근무',
-    run: () => { addMerit(R(1, 2)); add('rep', 1); return pick(['조용한 바다였다.', '표류하던 상선을 구조했다.', '밀수선을 적발했다.', '해적에게 붙잡힌 어선을 되찾았다.']); } },
+    text: '평범한 순찰 근무다. 어떻게 보낼까?',
+    choices: [
+      { t: '원칙대로 순찰한다', run: () => { addMerit(R(1, 3)); add('rep', 1); return pick(['밀수선을 적발했다.', '표류하던 상선을 구조했다.', '조용한 바다였다.']); } },
+      { t: '항구 정보원을 만난다', run: () => { add('conn', 4); if (P(0.4)) { addMerit(3); return '수배범의 은신처 정보를 얻었다.'; } return '쓸 만한 소문은 없었다.'; } },
+      { t: '함상 훈련을 한다', run: () => { train(2); return '부하들과 함께 갑판에서 땀을 흘렸다.'; } },
+    ] },
   { id: 'n_rescue', w: 1.2, tag: 'good', cond: () => isNavy(), title: '해난 구조',
     run: () => { add('rep', R(4, 8)); addMerit(2); add('conn', 2); return pick(['침몰하는 여객선에서 승객들을 구해냈다.', '폭풍 속에서 어부 일가를 건져 올렸다.']); } },
   { id: 'n_train', w: 2, tag: 'good', cond: () => isNavy(), title: '해군 특별 훈련',

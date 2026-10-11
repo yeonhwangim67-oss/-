@@ -6,8 +6,9 @@
 
 const SEASON_SEC = 15;
 const YEAR_SEC = 60;
-const EVENT_CHANCE = 0.3;
-const EVENT_COOLDOWN = 8;          // 같은 이벤트는 최소 8계절(2년) 뒤에 다시 나온다
+const EVENT_CHANCE = 0.2;
+const EVENT_COOLDOWN = 8;
+const NATURAL_HP = { kid: 75, adult: 80 };   // 자연 회복은 여기까지. 그 이상은 휴식·치료 이벤트로만          // 같은 이벤트는 최소 8계절(2년) 뒤에 다시 나온다
 const SEASONS = ['봄', '여름', '가을', '겨울'];
 const SPEEDS = [1, 2, 4, 8, 16];
 
@@ -24,10 +25,10 @@ const EXTRA_LABEL = { train: '단련', merit: '공적' };
 
 /* ---------- 난이도 ---------- */
 const DIFF = {
-  EZ:     { name: '쉬움',   dmg: 0.7,  enemy: 0.85, death: 0.6,  badW: 0.7,  goodW: 1.4,  support: 1.5, young: 0.5, kidRegen: 2 },
-  NORMAL: { name: '기본',   dmg: 1,    enemy: 1,    death: 1,    badW: 1,    goodW: 1,    support: 1, young: 0.6, kidRegen: 1.5 },
-  HARD:   { name: '어려움', dmg: 1.25, enemy: 1.15, death: 1.35, badW: 1.35, goodW: 0.85, support: 0.8, young: 0.75, kidRegen: 1 },
-  EX:     { name: '극한',   dmg: 1.5,  enemy: 1.3,  death: 1.7,  badW: 1.6,  goodW: 0.7,  support: 0.75, young: 1, kidRegen: 0.5 },
+  EZ:     { name: '쉬움',   dmg: 0.7,  enemy: 0.85, death: 0.6,  badW: 0.7,  goodW: 1.4,  support: 1.5, young: 0.6, kidRegen: 1 },
+  NORMAL: { name: '기본',   dmg: 1,    enemy: 1,    death: 1,    badW: 1,    goodW: 1,    support: 1, young: 0.7, kidRegen: 0.75 },
+  HARD:   { name: '어려움', dmg: 1.25, enemy: 1.15, death: 1.35, badW: 1.35, goodW: 0.85, support: 0.8, young: 0.85, kidRegen: 0.5 },
+  EX:     { name: '극한',   dmg: 1.5,  enemy: 1.3,  death: 1.7,  badW: 1.6,  goodW: 0.7,  support: 0.75, young: 1, kidRegen: 0.25 },
 };
 
 /* ---------- 출생지 ----------
@@ -164,8 +165,8 @@ const SKILL_EFFECT = {
 /* ---------- 직업 ---------- */
 const PIRATE_STAGES = ['해적', '칠무해', '사황', '대해적'];
 const NAVY_RANKS = [
-  ['잡병', 0], ['상등병', 6], ['조장', 14], ['소위', 25], ['중위', 38], ['대위', 52], ['소령', 68],
-  ['중령', 86], ['대령', 106], ['준장', 130], ['소장', 156], ['중장', 186], ['대장', 225], ['원수', 270],
+  ['잡병', 0], ['상등병', 5], ['조장', 11], ['소위', 19], ['중위', 28], ['대위', 39], ['소령', 51],
+  ['중령', 65], ['대령', 80], ['준장', 98], ['소장', 118], ['중장', 140], ['대장', 170], ['원수', 205],
 ];
 const ENEMY_CREWS = ['검은 이빨', '붉은 코', '철퇴', '바다뱀', '해골 깃발', '폭풍 까마귀', '외눈 상어', '황금 갈고리', '피의 장미', '녹슨 닻', '쌍두 독수리', '푸른 불꽃'];
 const RANDOM_GIVEN = ['루', '에이', '조로', '나미', '우솝', '로빈', '사보', '마르코', '스모', '코우', '타시기', '페로', '비비', '레베카', '키드', '바질', '히요리', '시라호'];
