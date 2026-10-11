@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>대해적시대 연대기</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Sans+KR:wght@400;500;700&family=Noto+Serif+KR:wght@500;700;900&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<!-- ===== 시작 화면 ===== -->
+<section id="start" class="screen">
+  <div class="start-wrap">
+    <header class="start-head">
+      <p class="eyebrow">ONE PIECE 세계관 · 텍스트 인생 시뮬레이션</p>
+      <h1>대해적시대 연대기</h1>
+      <p class="lead">1분에 한 살, 15초마다 한 계절. 계절이 바뀔 때마다 30% 확률로 사건이 찾아온다.<br>열 살에 꿈을 정하고, 열여덟에 바다로 나아가라.</p>
+    </header>
+
+    <div class="form-grid">
+      <label class="field">
+        <span>이름</span>
+        <input id="in-name" type="text" maxlength="12" placeholder="비워두면 무작위">
+      </label>
+      <div class="field">
+        <span>성별</span>
+        <div class="seg" id="in-gender">
+          <button type="button" data-v="남성" class="on">남성</button>
+          <button type="button" data-v="여성">여성</button>
+        </div>
+      </div>
+      <label class="field seed-field">
+        <span>시드</span>
+        <div class="seed-row">
+          <input id="in-seed" type="text" maxlength="24" spellcheck="false">
+          <button type="button" id="btn-reroll" class="ghost" title="새 시드">🎲</button>
+        </div>
+      </label>
+    </div>
+
+    <h2 class="sec-title">출생지 <small>— 고른 곳에 따라 난이도가 달라진다</small></h2>
+    <div id="place-grid" class="place-grid"></div>
+
+    <div class="start-foot">
+      <p class="hint">같은 시드 + 같은 출생지 + 같은 선택이면 같은 인생이 펼쳐진다.</p>
+      <button id="btn-start" class="primary">태어나기</button>
+    </div>
+  </div>
+</section>
+
+<!-- ===== 게임 화면 ===== -->
+<section id="game" class="screen hidden">
+  <header class="topbar">
+    <div class="age"><span id="age-num">0</span><span class="age-unit">세</span><span id="season" class="season">봄</span></div>
+    <div class="bar-wrap">
+      <div class="bar"><div id="year-bar" class="bar-fill"></div></div>
+      <div class="bar-ticks"><i></i><i></i><i></i></div>
+      <div id="status-line" class="status-line"></div>
+    </div>
+    <div class="controls">
+      <div class="seg speed" id="speed"></div>
+      <button id="btn-pause" class="ghost">일시정지</button>
+    </div>
+  </header>
+
+  <div class="layout">
+    <aside class="side" id="side"></aside>
+    <div id="pending"></div>
+    <main id="log" class="log"></main>
+  </div>
+</section>
+
+<!-- ===== 종료 화면 ===== -->
+<div id="end" class="overlay hidden">
+  <div class="end-card">
+    <p class="eyebrow">인생의 끝</p>
+    <h2 id="end-title"></h2>
+    <p id="end-cause" class="end-cause"></p>
+    <div id="end-body"></div>
+    <div class="end-actions">
+      <button id="btn-same" class="ghost">같은 시드로 다시</button>
+      <button id="btn-new" class="primary">새 인생</button>
+    </div>
+  </div>
+</div>
+
+<script src="game.js"></script>
+</body>
+</html>
