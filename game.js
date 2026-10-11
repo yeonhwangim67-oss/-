@@ -488,7 +488,7 @@ function onNewYear() {
   // 승급 제안처럼 중요한 이벤트는 조건이 맞으면 확률과 상관없이 찾아온다
   for (const id of ['p_shichi', 'p_yonko', 'p_raftel']) {
     const ev = EVENTS.find(e => e.id === id);
-    if (ev.cond() && !G.queue.includes(id)) { G.queue.push(id); break; }
+    if (ev.cond() && !G.queue.includes(id)) { if (P(typeof ev.yearly === 'function' ? ev.yearly() : ev.yearly)) G.queue.push(id); break; }
   }
   // 노화: 체력이 깎이는 대신, 나이가 들수록 해마다 노환으로 죽을 확률이 오른다
   if (G.age > 50) {

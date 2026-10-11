@@ -530,27 +530,27 @@ const EVENTS = [
       { t: '정보상에게 탁본을 산다', need: '재산 30', cond: () => G.stats.wealth >= 30, run: () => { add('wealth', -30); return gainPoneglyph('막대한 돈을 치르고 탁본을 손에 넣었다.'); } },
       { t: '포기한다', run: () => '때가 아니다.' },
     ] },
-  { id: 'p_shichi', w: 10, cond: () => isPirate() && !G.job.crewId && G.job.stage === 0 && G.job.bounty >= 20000 && G.stats.crew >= 20
-      && !(G.flags.shichiNo && G.age - G.flags.shichiNo < 3), title: '세계정부의 제안',
+  { id: 'p_shichi', w: 0, yearly: () => (G.job.bounty >= 60000 ? 0.4 : 0.15), cond: () => isPirate() && !G.job.crewId && G.job.stage === 0 && G.job.bounty >= 30000 && G.stats.crew >= 30 && G.stats.conn >= 15
+      && G.stats.rep > -40 && !G.flags.shichiNo, title: '세계정부의 제안',
     text: '세계정부의 사절이 찾아왔다. "왕하칠무해의 자리를 제안한다. 해적질은 묵인하겠다. 단, 소집에는 응해야 한다."',
     choices: [
       { t: '수락한다', run: () => { G.job.stage = 1; add('rep', 25); add('conn', 10); G.flags.hakiOpen = true; rec('칠무해 임명'); return `${G.name}의 이름이 칠무해 명단에 올랐다. 정부의 개라는 손가락질도 받지만, 아무도 함부로 건드리지 못한다.`; } },
-      { t: '거절한다', run: () => { G.flags.shichiNo = G.age; add('rep', -5); return '사절을 돌려보냈다. ' + addBounty(5000); } },
+      { t: '거절한다', run: () => { G.flags.shichiNo = G.age; add('rep', -5); return '사절을 돌려보냈다. 정부는 두 번 묻지 않는다. ' + addBounty(5000); } },
     ] },
-  { id: 'p_yonko', w: 10, cond: () => isPirate() && !G.job.crewId && G.job.stage === 1 && G.job.bounty >= 150000 && G.stats.crew >= 55 && G.stats.conn >= 30
-      && !(G.flags.yonkoTry && G.age - G.flags.yonkoTry < 2), title: '신세계의 패권',
+  { id: 'p_yonko', w: 0, yearly: 0.15, cond: () => isPirate() && !G.job.crewId && G.job.stage === 1 && G.job.bounty >= 250000 && G.stats.crew >= 65 && G.stats.conn >= 45 && power() >= 140
+      && !(G.flags.yonkoTry && G.age - G.flags.yonkoTry < 5), title: '신세계의 패권',
     text: '사황 한 명이 쇠약해졌다는 소문이 돈다. 그의 영역을 차지하면 신세계의 왕좌에 오를 수 있다.',
     choices: [
-      { t: '전쟁을 건다', enemy: 135, tag: '위험', run: () => {
+      { t: '전쟁을 건다', enemy: 165, kill: 0.08, tag: '위험', run: () => {
           G.flags.yonkoTry = G.age;
-          return fightResult(fight(135, 0.3, '사황'),
+          return fightResult(fight(165, 0.35, '사황', 0.08),
             () => { G.job.stage = 2; G.job.bounty = Math.round(G.job.bounty * 1.6); add('crew', 10); add('conn', 8); rec('사황 등극');
               return `세계를 뒤흔든 전쟁 끝에 승리했다. 신문 1면: "새로운 사황 탄생". 현상금 ${fmtBounty(G.job.bounty)}.`; },
             () => { add('crew', -R(10, 20)); return '참패했다. 함대의 절반을 잃고 후퇴했다.'; });
         } },
       { t: '때를 기다린다', run: () => { G.flags.yonkoTry = G.age; return '아직은 힘을 기를 때다.'; } },
     ] },
-  { id: 'p_raftel', w: 12, cond: () => isPirate() && !G.job.crewId && G.job.stage === 2 && G.job.bounty >= 300000 && G.stats.crew >= 75 && G.stats.conn >= 45
+  { id: 'p_raftel', w: 0, yearly: 0.35, cond: () => isPirate() && !G.job.crewId && G.job.stage === 2 && G.job.bounty >= 300000 && G.stats.crew >= 75 && G.stats.conn >= 45
       && (G.flags.pg || 0) >= 4 && !(G.flags.raftelTry && G.age - G.flags.raftelTry < 2), title: '최후의 섬',
     text: '네 개의 로드 포네그리프가 가리키는 좌표. 최후의 섬 라프텔이 눈앞이다. 그러나 다른 사황과 해군 대함대가 길을 막는다.',
     choices: [
