@@ -124,8 +124,8 @@ function addMerit(n) {
 function checkRank() {
   while (G.job.rank < NAVY_RANKS.length - 1 && G.job.merit >= NAVY_RANKS[G.job.rank + 1][1]) {
     const next = G.job.rank + 1;
-    if (next >= 12 && G.stats.rep < 50) { G.flags.rankBlock = '대장 이상은 평판 50 이상이 필요하다'; break; }
-    if (next === 13 && (G.stats.rep < 70 || G.stats.conn < 60)) { G.flags.rankBlock = '원수는 평판 70·인맥 60 이상이 필요하다'; break; }
+    if (next >= 12 && G.stats.rep < 60) { G.flags.rankBlock = '대장 이상은 평판 60 이상이 필요하다'; break; }
+    if (next === 13 && (G.stats.rep < 80 || G.stats.conn < 70)) { G.flags.rankBlock = '원수는 평판 80·인맥 70 이상이 필요하다'; break; }
     G.flags.rankBlock = null;
     G.job.rank = next;
     add('crew', 5);
@@ -411,7 +411,7 @@ function log(title, text, kind = '', extra = {}) {
   if (G.extra.length) { text += ' ' + G.extra.join(' '); G.extra = []; }
   const deltas = Object.entries(G.deltas).map(([k, v]) => ({ k, v }));
   G.deltas = {};
-  G.logs.unshift({ stamp: `${G.age}세 · ${SEASONS[G.season]}`, title, text, kind, deltas, ...extra });
+  G.logs.unshift({ age: G.age, stamp: `${G.age}세 · ${SEASONS[G.season]}`, title, text, kind, deltas, ...extra });
   if (G.logs.length > 300) G.logs.length = 300;
 }
 function flushNotes() {
@@ -490,11 +490,17 @@ function onNewYear() {
     const ev = EVENTS.find(e => e.id === id);
     if (ev.cond() && !G.queue.includes(id)) { if (P(typeof ev.yearly === 'function' ? ev.yearly() : ev.yearly)) G.queue.push(id); break; }
   }
-  // 노화: 체력이 깎이는 대신, 나이가 들수록 해마다 노환으로 죽을 확률이 오른다
-  if (G.age > 50) {
+  // 해군 근무 평정: 해마다 계급·체포 실적에 따라 공적이 쌓인다
+  if (isNavy() && G.age < 60) {
+    const merit = 2 + Math.min(2, Math.floor(G.job.captures / 10));
+    addMerit(merit);
+    add('rep', 1);
+    G.deltas = {};
+  }
+  // 노화: 80세부터 해마다 노환 사망 확률이 0.5%씩 오른다 (81세 0.5%, 82세 1%, …)
+  if (G.age > OLD_AGE) {
     const longevity = (G.lineage.longevity || 1) * (G.flags.longevity ? 0.25 : 1);
-    const p = 0.0012 * Math.pow(G.age - 50, 1.5) * (1.5 - G.stats.hp / 100) * longevity;
-    if (P(p)) { G.stats.hp = 0; G.deathCause = '노환으로 평온하게 눈을 감음'; }
+    if (P(OLD_AGE_STEP * (G.age - OLD_AGE) * longevity)) { G.stats.hp = 0; G.deathCause = '노환으로 평온하게 눈을 감음'; }
   }
 }
 
@@ -505,7 +511,8 @@ function pickEvent() {
     if (e.forced || (e.once && G.used[e.id])) return false;
     const seen = G.seen[e.id];
     if (seen !== undefined && G.ticks - seen < (e.cd || EVENT_COOLDOWN)) return false;
-    if (isCelestial() && !e.celestial && !e.lore) return false;
+    if (e.lore) return false;   // 세계관 이야기는 따로 굴린다
+    if (isCelestial() && !e.celestial) return false;
     return !e.cond || e.cond();
   });
   return wpick(pool, e => {
@@ -513,6 +520,7 @@ function pickEvent() {
     if (e.tag === 'good') w *= d.goodW;
     if (e.tag === 'bad') w *= d.badW;
     if (/^(p|n)_/.test(e.id)) w *= 2;
+    if (e.navyCatch) w *= 1.5;   // 해군의 해적 체포 이벤트는 다른 이벤트보다 잘 나온다
     const seen = G.seen[e.id];
     if (seen !== undefined && G.ticks - seen < 24) w *= 0.5;
     return w;
@@ -572,6 +580,12 @@ function tick() {
   if (G.queue.length) { const id = G.queue.shift(); startEvent(EVENTS.find(e => e.id === id)); return; }
   if (P(EVENT_CHANCE)) {
     const ev = pickEvent();
+    if (ev) startEvent(ev);
+  }
+  // 세계관 이야기: 사건과 별개로 굴린다 (스탯 변화 없음)
+  if (!G.pending && P(LORE_CHANCE)) {
+    const pool = EVENTS.filter(e => e.lore && !(G.ticks - (G.seen[e.id] ?? -999) < e.cd) && (!e.cond || e.cond()));
+    const ev = pool.length ? pick(pool) : null;
     if (ev) startEvent(ev);
   }
 }
@@ -705,14 +719,20 @@ function renderLog() {
   } else {
     $('#pending').innerHTML = '';
   }
-  $('#log').innerHTML = G.logs.map(l => `
+  // 해마다 묶어서 보여준다
+  let lastAge = null;
+  $('#log').innerHTML = G.logs.map(l => {
+    const head = l.age !== lastAge ? `<h4 class="year-sep"><span>${l.age}세</span></h4>` : '';
+    lastAge = l.age;
+    return head + `
     <article class="entry ${l.kind}">
       <div class="entry-head"><span class="stamp">${l.stamp}</span><span class="entry-title">${esc(l.title)}</span></div>
       ${l.sit ? `<p class="entry-sit">${esc(l.sit)}</p>` : ''}
       ${l.choice ? `<p class="entry-choice">▸ ${esc(l.choice)}</p>` : ''}
       <p class="entry-text">${esc(l.text)}</p>
       ${deltaChips(l.deltas)}
-    </article>`).join('');
+    </article>`;
+  }).join('');
 }
 
 function renderAll() { renderTop(); renderSide(); renderLog(); }

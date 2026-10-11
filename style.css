@@ -277,3 +277,8 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
 .rarity-row b { font-variant-numeric: tabular-nums; color: var(--gold-hi); font-weight: 500; white-space: nowrap; }
 .rarity-row i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--gold-soft); }
 .choice-desc { display: block; font-size: 12px; color: var(--muted); margin-top: 3px; margin-left: 22px; }
+
+/* ---------- 연도 구분 ---------- */
+.year-sep { display: flex; align-items: center; gap: 12px; margin: 10px 0 0; font-family: var(--serif); font-size: 15px; font-weight: 700; color: var(--gold); }
+.year-sep::after { content: ""; flex: 1; height: 1px; background: var(--line); }
+.year-sep:first-child { margin-top: 0; }

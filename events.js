@@ -565,7 +565,7 @@ const EVENTS = [
     ] },
 
   /* =================== 해군 =================== */
-  { id: 'n_mission', w: 4, cond: () => isNavy(), title: '해적 토벌 임무',
+  { id: 'n_mission', w: 6, navyCatch: true, cond: () => isNavy(), title: '해적 토벌 임무',
     text: () => `본부의 명령: 「${pick(ENEMY_CREWS)} 해적단」을 소탕하라.`,
     choices: [
       { t: '정면 돌파', enemy: () => navyEnemy(), run: () => fightResult(fight(navyEnemy(), 0.1, '해적'),
@@ -587,7 +587,7 @@ const EVENTS = [
     run: () => { add('rep', R(4, 8)); addMerit(2); add('conn', 2); return pick(['침몰하는 여객선에서 승객들을 구해냈다.', '폭풍 속에서 어부 일가를 건져 올렸다.']); } },
   { id: 'n_train', w: 2, tag: 'good', cond: () => isNavy(), title: '해군 특별 훈련',
     text: '오늘은 특별 훈련일이다. 무엇을 집중적으로 단련할까?', choices: trainingChoices('rokushiki') },
-  { id: 'n_bigfish', w: 1.5, cond: () => isNavy() && G.job.rank >= 5, title: '거물 해적 체포',
+  { id: 'n_bigfish', w: 1.5, navyCatch: true, cond: () => isNavy() && G.job.rank >= 5, title: '거물 해적 체포',
     text: '억대 현상금의 거물 해적이 근해에 나타났다.',
     choices: [
       { t: '직접 상대한다', enemy: () => navyEnemy(25), tag: '위험', run: () => fightResult(fight(navyEnemy(25), 0.18, '거물 해적'),
@@ -595,7 +595,7 @@ const EVENTS = [
           () => '놓쳤다. 상처만 남았다.') },
       { t: '본부에 지원 요청', run: () => { addMerit(R(2, 4)); return '지원 함대와 공을 나눴다.'; } },
     ] },
-  { id: 'n_nemesis', w: 1.2, cd: 12, cond: () => isNavy() && G.job.rank >= 3, title: '숙적',
+  { id: 'n_nemesis', w: 1.2, cd: 12, navyCatch: true, cond: () => isNavy() && G.job.rank >= 3, title: '숙적',
     text: () => G.flags.nemesis ? `또 「${G.flags.nemesis} 해적단」이다. 몇 번째 추격인지 모르겠다.` : `「${(G.flags.nemesisNext = pick(ENEMY_CREWS))} 해적단」의 선장이 당신의 부하를 다치게 하고 달아났다.`,
     choices: [
       { t: '끝까지 쫓는다', enemy: () => navyEnemy(10), run: () => {
@@ -745,7 +745,7 @@ const EVENTS = [
       { t: '민간인 대피를 우선한다', run: () => { add('rep', 10); addMerit(4); return '전투는 피했지만 섬 주민들을 모두 구했다.'; } },
       { t: '증원을 기다린다', run: () => { addMerit(2); return '대장급 증원이 도착할 때까지 거리를 유지했다.'; } },
     ]; } },
-  { id: 'n_guard', w: 2, tag: 'good', cond: () => isNavy(), title: '마을 수비 임무',
+  { id: 'n_guard', w: 2, tag: 'good', navyCatch: true, cond: () => isNavy(), title: '마을 수비 임무',
     text: '해적의 습격 예고가 있는 마을에 배치됐다.',
     choices: [
       { t: '마을 앞바다를 지킨다', enemy: () => navyEnemy(-5), run: () => fightResult(fight(navyEnemy(-5), 0.06, '습격 해적'),
@@ -800,6 +800,72 @@ const EVENTS = [
       { t: '찬성한다', run: () => { if (isPirate() && G.job.stage === 1) return '자기 목줄을 끊는 일에 찬성하다니, 묘한 기분이다.'; return '해적에게 특권 따위 필요 없다.'; } },
       { t: '반대한다', run: () => '칠무해가 없어지면 바다의 균형이 무너진다.' },
       { t: '관심 없다', run: () => '왕들의 회의는 먼 나라 이야기다.' },
+    ] },
+
+  /* =================== 해군 (추가) =================== */
+  { id: 'n_wanted', w: 3, navyCatch: true, cond: () => isNavy(), title: '수배자 추적',
+    text: () => `수배서의 해적 「${pick(['쌍칼', '독사', '외눈', '붉은 수염', '모래폭풍', '철가면'])}」가 이 섬에 숨어들었다는 제보가 들어왔다.`,
+    choices: [
+      { t: '직접 잠복한다', enemy: () => navyEnemy(-5), run: () => fightResult(fight(navyEnemy(-5), 0.06, '수배범'),
+          () => { G.job.captures += 1; addMerit(R(4, 7)); add('rep', 3); return '주점 뒷골목에서 수배범을 덮쳐 수갑을 채웠다.'; },
+          () => '수배범이 지붕을 타고 달아났다.') },
+      { t: '탐문 수사를 한다', tag: () => `성공 ${Math.round(clamp(0.45 + G.stats.conn / 150, 0, 0.95) * 100)}%`, run: () => {
+          if (P(0.45 + G.stats.conn / 150)) { G.job.captures += 1; addMerit(R(3, 5)); add('conn', 2); return '주민들의 증언을 모아 은신처를 찾아냈다.'; }
+          add('conn', 1); return '단서가 끊겼다.'; } },
+      { t: '현상금 사냥꾼과 손잡는다', run: () => { G.job.captures += 1; addMerit(R(2, 3)); add('rep', -2); add('wealth', -3); return '사냥꾼이 잡아 온 수배범을 넘겨받았다. 공은 반으로 줄었다.'; } },
+    ] },
+  { id: 'n_port', w: 2.5, navyCatch: true, cond: () => isNavy(), title: '항구 습격',
+    text: '해적들이 항구 마을을 습격하고 있다는 긴급 연락이 들어왔다.',
+    choices: [
+      { t: '전속력으로 출동한다', enemy: () => navyEnemy(), run: () => fightResult(fight(navyEnemy(), 0.1, '습격 해적'),
+          () => { G.job.captures += R(2, 4); addMerit(R(5, 9)); add('rep', 6); return '약탈 중이던 해적들을 일망타진했다.'; },
+          () => { add('rep', 2); add('crew', -R(1, 3)); return '해적들이 약탈품을 챙겨 도망쳤다.'; }) },
+      { t: '퇴로를 먼저 막는다', run: () => { if (P(0.55 + G.stats.crew / 200)) { G.job.captures += R(1, 3); addMerit(R(4, 7)); return '바다 쪽 퇴로를 막자 해적들이 꼼짝없이 갇혔다.'; } add('rep', -2); return '그사이 마을 피해가 커졌다.'; } },
+      { t: '주민 구조에 집중한다', run: () => { add('rep', 8); addMerit(2); return '해적은 놓쳤지만 다친 사람은 한 명도 없었다.'; } },
+    ] },
+  { id: 'n_convoy', w: 2, cond: () => isNavy(), title: '호송 임무',
+    text: () => pick(['세계 정부 보물선 호송 명령이 떨어졌다.', '임펠 다운으로 가는 죄수 호송선을 지키라는 명령이다.', '왕족이 탄 여객선을 호위하게 되었다.']),
+    choices: [
+      { t: '원칙대로 호위한다', run: () => { if (P(0.7)) { addMerit(R(3, 5)); add('conn', 2); return '아무 일 없이 목적지에 도착했다.'; } hurt(R(4, 8)); addMerit(2); return '도중에 해적의 기습을 받았지만 막아냈다.'; } },
+      { t: '미끼 배를 띄운다', run: () => { if (P(0.5)) { G.job.captures += R(1, 2); addMerit(R(5, 8)); return '미끼에 걸려든 해적선을 나포했다!'; } addMerit(1); return '해적은 나타나지 않았다.'; } },
+      { t: '호송 인원과 친해진다', run: () => { add('conn', 5); addMerit(1); return '긴 항해 동안 여러 사람과 얼굴을 익혔다.'; } },
+    ] },
+  { id: 'n_recruits', w: 1.5, tag: 'good', cond: () => isNavy() && G.job.rank >= 2, title: '신병 교육',
+    text: '새로 배치된 신병들의 교육을 맡게 되었다.',
+    choices: [
+      { t: '엄하게 단련시킨다', run: () => { add('crew', R(3, 6)); train(1); return '신병들이 이를 악물고 따라왔다. 쓸 만한 부하가 늘었다.'; } },
+      { t: '정의가 무엇인지 가르친다', run: () => { add('rep', 4); add('crew', R(2, 4)); return '"우리가 지키는 건 깃발이 아니라 사람이다."'; } },
+      { t: '실전에 데려간다', enemy: () => navyEnemy(-10), run: () => fightResult(fight(navyEnemy(-10), 0.04, '잔챙이 해적'),
+          () => { add('crew', R(4, 7)); G.job.captures += 1; addMerit(3); return '신병들이 첫 체포를 해냈다.'; },
+          () => { add('crew', -1); return '신병 하나가 다쳤다.'; }) },
+    ] },
+  { id: 'n_rival', w: 1.2, cd: 16, cond: () => isNavy(), title: '동기와의 경쟁',
+    text: '같은 해에 입대한 동기가 먼저 진급할 것 같다는 소문이다.',
+    choices: [
+      { t: '실적으로 이긴다', run: () => { addMerit(R(3, 6)); hurt(R(2, 5)); return '밤낮없이 순찰을 돌았다.'; } },
+      { t: '함께 작전을 짠다', run: () => { G.job.captures += 1; addMerit(R(2, 4)); add('conn', 4); return '둘이 손잡고 해적단 하나를 잡았다. 공은 반반.'; } },
+      { t: '신경 쓰지 않는다', run: () => { add('hp', 4); return '정의는 경쟁이 아니다.'; } },
+    ] },
+  { id: 'n_exam', w: 1.5, cond: () => isNavy() && G.job.rank < NAVY_RANKS.length - 1, title: '진급 심사',
+    text: () => `${NAVY_RANKS[G.job.rank + 1][0]} 진급 심사가 열린다. 심사관들이 실력을 보겠다고 한다.`,
+    choices: [
+      { t: '실기 시험을 본다', enemy: () => navyEnemy(5), run: () => fightResult(fight(navyEnemy(5), 0, '시험관'),
+          () => { addMerit(R(6, 10)); return '시험관을 쓰러뜨렸다. 심사장이 웅성거렸다.'; },
+          () => { addMerit(2); return '아깝게 떨어졌다. 다음 기회를 노린다.'; }) },
+      { t: '작전 보고서로 승부한다', run: () => { if (P(0.4 + G.job.captures / 100)) { addMerit(R(5, 8)); return `체포 기록 ${G.job.captures}건이 빼곡한 보고서가 심사관들을 감탄시켰다.`; } addMerit(1); return '보고서가 너무 짧았다.'; } },
+      { t: '추천서를 받는다', need: '인맥 20', cond: () => G.stats.conn >= 20, run: () => { addMerit(R(4, 7)); add('conn', -3); return '옛 상관의 추천서가 힘을 썼다.'; } },
+    ] },
+  { id: 'n_g5', w: 0.8, once: true, cond: () => isNavy() && G.job.rank >= 3, title: 'G-5 지부 전출',
+    text: '신세계의 거친 지부 G-5로 전출 명령이 내려왔다. 해적보다 해군이 더 무섭다는 곳이다.',
+    choices: [
+      { t: '받아들인다', run: () => { train(3); G.job.captures += R(2, 4); addMerit(R(8, 12)); add('rep', -2); G.flags.hakiOpen = true; rec('G-5 근무'); return '험악한 부하들과 함께 신세계의 해적을 쓸어 담았다. 패기에 눈뜬 것도 이때였다.'; } },
+      { t: '본부 근무를 요청한다', run: () => { add('conn', 4); return '상관에게 밉보였지만 본부에 남았다.'; } },
+    ] },
+  { id: 'n_undercover', w: 1, cd: 16, navyCatch: true, cond: () => isNavy() && G.job.rank >= 2, title: '잠입 수사',
+    text: '해적들이 모이는 무법 항구에 신분을 숨기고 잠입하라는 명령이다.',
+    choices: [
+      { t: '해적인 척 잠입한다', tag: '위험', run: () => { if (P(0.55 + G.skills.obs * 0.1)) { G.job.captures += R(2, 5); addMerit(R(8, 12)); return '밀거래 현장을 덮쳐 한꺼번에 체포했다.'; } hurt(R(10, 16)); return '정체가 들통나 집단 폭행을 당했다.'; } },
+      { t: '밖에서 감시만 한다', run: () => { addMerit(R(2, 3)); add('conn', 2); return '드나드는 배를 모두 기록해 본부에 넘겼다.'; } },
     ] },
 
   /* =================== 노년 =================== */
