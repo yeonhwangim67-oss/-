@@ -112,7 +112,7 @@ const EVENTS = [
       if (P(0.4)) { train(3); return '숲에서 길을 잃었다가 이상한 노인을 만나 사흘간 몸 쓰는 법을 배웠다.'; }
       hurt(3); add('food', -3); return '숲에서 길을 잃고 하룻밤을 굶었다.';
     } },
-  { id: 'c_books', w: 1.5, once: true, cond: () => G.age >= 6 && G.age < 16, title: '오래된 책',
+  { id: 'c_books', w: 1.5, once: true, celestial: true, cond: () => G.age >= 6 && G.age < 16, title: '오래된 책',
     text: '다락에서 먼지 쌓인 책 꾸러미를 발견했다.',
     choices: [
       { t: '항해술 책을 읽는다', run: () => { train(1); G.flags.navigation = true; rec('항해술을 익힘'); return '별을 보고 방향을 읽는 법을 익혔다. (도주 성공률 상승)'; } },
@@ -150,7 +150,7 @@ const EVENTS = [
     text: '해적이 되려면 강해져야 한다. 오늘은 무엇을 할까?',
     choices: [
       { t: '절벽 다이빙', run: () => { train(R(2, 3)); add('hp', 2); return '밤마다 절벽에서 바다로 뛰어드는 연습을 했다.'; } },
-      { t: '나무 막대 검술', run: () => { learn('sword', R(3, 5)); return '나무 막대로 검술을 흉내 내며 손바닥이 터졌다.'; } },
+      { t: '나무 막대 휘두르기', run: () => { train(2); if (G.flags.swordOpen) learn('sword', 2); return '나무 막대를 휘두르며 손바닥이 터졌다.'; } },
       { t: '어선에서 노 젓기', run: () => { train(1); G.flags.navigation = true; return '어선에 몰래 올라 노 젓는 법과 물길을 익혔다.'; } },
       { t: '해적 이야기 수집', run: () => { add('conn', 4); return '주점을 기웃거리며 해적들의 이름과 섬 이야기를 외웠다.'; } },
     ] },
@@ -160,13 +160,13 @@ const EVENTS = [
     text: '해군이 되려면 무엇이 필요할까?',
     choices: [
       { t: '새벽 구보', run: () => { train(R(2, 3)); add('hp', 2); return '매일 새벽 모래사장을 달렸다.'; } },
-      { t: '목검 훈련', run: () => { learn('sword', R(3, 5)); return '지부 훈련장 밖에서 병사들의 검술을 따라 했다.'; } },
+      { t: '목검 훈련', run: () => { train(2); if (G.flags.swordOpen) learn('sword', 2); return '지부 훈련장 밖에서 병사들의 목검 훈련을 따라 했다.'; } },
       { t: '해도 공부', run: () => { G.flags.navigation = true; add('rep', 2); return '해도 읽는 법과 신호기 다루는 법을 익혔다.'; } },
       { t: '지부에서 잔심부름', run: () => { add('conn', 3); add('rep', 2); return '병사들 심부름을 하며 얼굴을 익혔다.'; } },
     ] },
   { id: 't_report', w: 1.5, cond: () => G.tree === 'navy' && G.age < 18, title: '수배자 제보',
     run: () => { add('rep', 5); add('wealth', 3); return '수배서와 똑같은 얼굴을 보고 해군에 신고했다. 작은 포상금을 받았다.'; } },
-  { id: 't_dojo', w: 2, cond: () => G.age >= 9 && G.age < 18 && G.skills.sword < 2, title: '검술 도장',
+  { id: 't_dojo', w: 1.5, cond: () => G.age >= 10 && G.age < 18 && G.skills.sword < 2 && !isCelestial(), title: '검술 도장',
     text: () => G.place.id === 'wano' ? '사무라이 도장에서 문하생을 받는다고 한다.' : '마을 검술 도장 앞에서 목검 소리가 울린다.',
     choices: [
       { t: '문하생이 된다', need: '재산 5', cond: () => G.stats.wealth >= 5, run: () => { add('wealth', -5); learn('sword', 9); return '사범이 무뚝뚝하게 목검을 건넸다. "천 번 휘두르고 와라."'; } },
@@ -190,7 +190,7 @@ const EVENTS = [
     choices: [
       { t: '어부 그물 정리', run: () => { add('wealth', R(2, 4)); add('food', 4); return '품삯 대신 생선을 넉넉히 받았다.'; } },
       { t: '항구 짐 나르기', run: () => { add('wealth', R(3, 5)); train(1); hurt(2); return '허리가 끊어질 것 같지만 돈은 쏠쏠했다.'; } },
-      { t: '대장간 풀무질', run: () => { add('wealth', R(2, 4)); learn('sword', 2); return '대장장이가 칼 손질하는 법을 보여주었다.'; } },
+      { t: '대장간 풀무질', run: () => { add('wealth', R(2, 4)); train(1); return '뜨거운 풀무 앞에서 팔뚝이 굵어졌다.'; } },
       { t: '식당 설거지', run: () => { add('wealth', R(2, 3)); add('conn', 2); add('food', 2); return '손님들 이야기를 엿들으며 접시를 닦았다.'; } },
     ] },
   { id: 't_cabinboy', w: 1, once: true, cond: () => G.age >= 12 && G.age < 18 && !G.place.pirateLand, title: '견습 선원',
@@ -226,7 +226,7 @@ const EVENTS = [
     ] },
 
   /* =================== 공통 =================== */
-  { id: 'g_fruit', w: 0.7, cd: 16, cond: () => !G.fruit && G.age >= 6, title: '수상한 열매',
+  { id: 'g_fruit', w: 0.7, cd: 16, celestial: true, cond: () => !G.fruit && G.age >= 6, title: '수상한 열매',
     text: '소용돌이 무늬가 새겨진 기묘한 열매를 발견했다. 악마의 열매일지도 모른다.',
     choices: [
       { t: '먹는다', tag: '열매', run: () => eatFruit() },
@@ -237,7 +237,7 @@ const EVENTS = [
     run: () => { G.skills.king = 1; rec('패왕색 각성'); return pick([
       '분노가 터진 순간 주변의 사람들이 거품을 물고 쓰러졌다. 왕의 자질, 패왕색이 깨어났다.',
       '위기 속에서 내지른 고함에 짐승들이 일제히 기절했다. 몸속 깊은 곳의 무언가가 깨어났다.']); } },
-  { id: 'g_famine', w: 1.5, tag: 'bad', cond: () => G.age >= 6, title: '흉년',
+  { id: 'g_famine', w: 1.5, tag: 'bad', cond: () => G.age >= 6 && !atSea() && !isCelestial(), title: '흉년',
     text: () => pick(['바다도 땅도 인색한 해다. 먹을 것이 바닥나간다.', '해류가 바뀌어 물고기 떼가 사라졌다.', '병충해로 밭이 망가졌다.']),
     choices: [
       { t: '허리띠를 졸라맨다', run: () => { add('food', -R(6, 10)); return '하루 한 끼로 버텼다.'; } },
@@ -246,7 +246,7 @@ const EVENTS = [
           () => { add('food', 4); return '멧돼지를 잡아 이웃과 나눴다.'; },
           () => { add('food', -6); return '빈손으로 상처만 입고 돌아왔다.'; }) },
     ] },
-  { id: 'g_rest', w: 2, tag: 'good', title: '평온한 계절',
+  { id: 'g_rest', w: 2, tag: 'good', celestial: true, title: '평온한 계절',
     run: () => { add('hp', R(3, 8)); return pick(['오랜만에 푹 쉬었다.', '따뜻한 햇볕 아래 낮잠을 잤다.', '아무 일 없는 하루하루가 이어졌다.', '좋은 바람이 부는 계절이었다.']); } },
   { id: 'g_accident', w: 1, tag: 'bad', cond: () => G.age >= 8, title: '사고',
     run: () => { hurt(R(4, 10)); return pick(['계단에서 굴러떨어졌다.', '돛대에서 떨어진 도르래에 맞았다.', '상한 생선을 먹고 크게 탈이 났다.', '정체불명의 버섯을 먹고 사흘을 앓았다.']); } },
@@ -284,7 +284,7 @@ const EVENTS = [
       { t: '구경하며 배운다', run: () => { train(1); return '덩치 큰 놈들이 어떻게 싸우는지 지켜봤다.'; } },
       { t: '조용히 나간다', run: () => '괜한 싸움에 휘말리지 않았다.' },
     ] },
-  { id: 'g_celestial', w: 0.8, tag: 'bad', cond: () => G.age >= 8 && !G.place.pirateLand, title: '천룡인 행차',
+  { id: 'g_celestial', w: 0.8, tag: 'bad', cond: () => G.age >= 8 && !G.place.pirateLand && !G.flags.celestial, title: '천룡인 행차',
     text: '거품 헬멧을 쓴 천룡인이 노예를 끌고 거리를 지난다. 모두가 엎드렸다.',
     choices: [
       { t: '엎드린다', run: () => '이를 악물고 땅에 이마를 댔다.' },
@@ -386,10 +386,11 @@ const EVENTS = [
       { t: '지금은 아니다', run: () => '조금 더 모으기로 했다.' },
     ] },
   { id: 'v_pirate_scout', w: 1.2, cond: () => isCivil() && G.age <= 40, title: '해적단의 스카우트',
-    text: '항구에 들른 해적 선장이 당신을 눈여겨본다. "우리 배에 타라!"',
-    choices: [
-      { t: '돛을 올린다', run: () => becomePirate(false) },
-      { t: '거절한다', run: () => '선장은 아쉬운 듯 웃으며 떠났다.' },
+    text: '항구에 해적선이 들어왔다. 선원들이 쓸 만한 녀석을 찾고 있다.',
+    choices: () => [
+      ...crewOffers(1),
+      { t: '내 배를 사서 깃발을 올린다', run: () => becomePirate(false) },
+      { t: '거절한다', run: () => '해적선은 떠났다.' },
     ] },
   { id: 'v_navy_recruit', w: 1.2, cond: () => isCivil() && G.age <= 35 && !G.place.pirateLand, title: '해군 모병',
     text: '해군 지부에서 신병을 모집한다는 벽보가 붙었다.',
@@ -516,7 +517,7 @@ const EVENTS = [
           () => { add('crew', -R(1, 4)); return '주동자를 바다에 던져버렸다.'; },
           () => { add('crew', -R(8, 15)); return '반란이 성공했다. 겨우 목숨만 건졌다.'; }) },
     ] },
-  { id: 'p_poneglyph', w: 5, cond: () => isPirate() && G.job.stage >= 1 && (G.flags.pg || 0) < 4, title: '로드 포네그리프',
+  { id: 'p_poneglyph', w: 5, cond: () => isPirate() && !G.job.crewId && G.job.stage >= 1 && (G.flags.pg || 0) < 4, title: '로드 포네그리프',
     text: () => `${(G.flags.pg || 0) + 1}번째 로드 포네그리프의 행방을 알아냈다. 다른 거물 해적도 노리고 있다.`,
     choices: [
       { t: '쟁탈전을 벌인다', enemy: () => pirateEnemy(), run: () => fightResult(fight(pirateEnemy(), 0.18, '거물 해적'),
@@ -529,27 +530,27 @@ const EVENTS = [
       { t: '정보상에게 탁본을 산다', need: '재산 30', cond: () => G.stats.wealth >= 30, run: () => { add('wealth', -30); return gainPoneglyph('막대한 돈을 치르고 탁본을 손에 넣었다.'); } },
       { t: '포기한다', run: () => '때가 아니다.' },
     ] },
-  { id: 'p_shichi', w: 10, cond: () => isPirate() && G.job.stage === 0 && G.job.bounty >= 30000 && G.stats.crew >= 30
+  { id: 'p_shichi', w: 10, cond: () => isPirate() && !G.job.crewId && G.job.stage === 0 && G.job.bounty >= 20000 && G.stats.crew >= 20
       && !(G.flags.shichiNo && G.age - G.flags.shichiNo < 3), title: '세계정부의 제안',
     text: '세계정부의 사절이 찾아왔다. "왕하칠무해의 자리를 제안한다. 해적질은 묵인하겠다. 단, 소집에는 응해야 한다."',
     choices: [
       { t: '수락한다', run: () => { G.job.stage = 1; add('rep', 25); add('conn', 10); G.flags.hakiOpen = true; rec('칠무해 임명'); return `${G.name}의 이름이 칠무해 명단에 올랐다. 정부의 개라는 손가락질도 받지만, 아무도 함부로 건드리지 못한다.`; } },
       { t: '거절한다', run: () => { G.flags.shichiNo = G.age; add('rep', -5); return '사절을 돌려보냈다. ' + addBounty(5000); } },
     ] },
-  { id: 'p_yonko', w: 10, cond: () => isPirate() && G.job.stage === 1 && G.job.bounty >= 150000 && G.stats.crew >= 65 && G.stats.conn >= 45
+  { id: 'p_yonko', w: 10, cond: () => isPirate() && !G.job.crewId && G.job.stage === 1 && G.job.bounty >= 150000 && G.stats.crew >= 55 && G.stats.conn >= 30
       && !(G.flags.yonkoTry && G.age - G.flags.yonkoTry < 2), title: '신세계의 패권',
     text: '사황 한 명이 쇠약해졌다는 소문이 돈다. 그의 영역을 차지하면 신세계의 왕좌에 오를 수 있다.',
     choices: [
-      { t: '전쟁을 건다', enemy: 150, tag: '위험', run: () => {
+      { t: '전쟁을 건다', enemy: 135, tag: '위험', run: () => {
           G.flags.yonkoTry = G.age;
-          return fightResult(fight(150, 0.3, '사황'),
+          return fightResult(fight(135, 0.3, '사황'),
             () => { G.job.stage = 2; G.job.bounty = Math.round(G.job.bounty * 1.6); add('crew', 10); add('conn', 8); rec('사황 등극');
               return `세계를 뒤흔든 전쟁 끝에 승리했다. 신문 1면: "새로운 사황 탄생". 현상금 ${fmtBounty(G.job.bounty)}.`; },
             () => { add('crew', -R(10, 20)); return '참패했다. 함대의 절반을 잃고 후퇴했다.'; });
         } },
       { t: '때를 기다린다', run: () => { G.flags.yonkoTry = G.age; return '아직은 힘을 기를 때다.'; } },
     ] },
-  { id: 'p_raftel', w: 12, cond: () => isPirate() && G.job.stage === 2 && G.job.bounty >= 300000 && G.stats.crew >= 80 && G.stats.conn >= 60
+  { id: 'p_raftel', w: 12, cond: () => isPirate() && !G.job.crewId && G.job.stage === 2 && G.job.bounty >= 300000 && G.stats.crew >= 75 && G.stats.conn >= 45
       && (G.flags.pg || 0) >= 4 && !(G.flags.raftelTry && G.age - G.flags.raftelTry < 2), title: '최후의 섬',
     text: '네 개의 로드 포네그리프가 가리키는 좌표. 최후의 섬 라프텔이 눈앞이다. 그러나 다른 사황과 해군 대함대가 길을 막는다.',
     choices: [
@@ -608,7 +609,7 @@ const EVENTS = [
   { id: 'n_cp', w: 0.8, once: true, cond: () => isNavy() && G.job.rank >= 3, title: '사이퍼 폴의 스카우트',
     text: '정부 첩보기관 CP의 요원이 은밀히 접근했다. "육식 특훈을 받아볼 생각 없나?"',
     choices: [
-      { t: '특훈을 받는다', run: () => { learn('rokushiki', 15); add('rep', -3); add('conn', 5); rec('CP 특훈 수료'); return '지옥 같은 반년이 지났다. 몸이 무기가 되었다.'; } },
+      { t: '특훈을 받는다', run: () => { learn('rokushiki', 15); add('conn', 5); rec('CP 특훈 수료'); return '지옥 같은 반년이 지났다. 몸이 무기가 되었다.'; } },
       { t: '거절한다', run: () => { add('rep', 2); return '정의는 그림자 속에 있지 않다.'; } },
     ] },
   { id: 'n_corrupt', w: 1.2, cond: () => isNavy(), title: '상관의 부정',
@@ -618,18 +619,19 @@ const EVENTS = [
           if (P(0.5)) { add('rep', 10); addMerit(5); rec('정의를 관철'); return '상관은 강등되었다. 당신의 이름이 본부에 알려졌다.'; }
           addMerit(-5); add('conn', -5); return '오히려 모함을 받아 한직으로 밀려났다.';
         } },
-      { t: '눈감는다', run: () => { add('wealth', 10); add('rep', -8); add('conn', 5); return '입막음 돈을 받았다. 마음이 무겁다.'; } },
+      { t: '눈감는다', run: () => { add('wealth', 10); add('rep', -4); add('conn', 5); return '입막음 돈을 받았다. 마음이 무겁다.'; } },
     ] },
   { id: 'n_tenryu', w: 1, cond: () => isNavy() && G.job.rank >= 3, title: '천룡인 호위',
     text: '천룡인 호위 임무가 떨어졌다. 그가 지나가던 시민을 쏘려 한다.',
     choices: [
-      { t: '명령에 따른다', run: () => { add('conn', 8); add('rep', -6); addMerit(3); return '눈을 감았다. 이것이 정의인가.'; } },
-      { t: '시민을 감싼다', run: () => { addMerit(-8); add('rep', 12); return '징계를 받았지만 시민들은 당신을 기억한다.'; } },
+      { t: '명령에 따른다', run: () => { add('conn', 8); addMerit(3); return '눈을 감았다. 이것이 정의인가.'; } },
+      { t: '시민을 감싼다', run: () => { addMerit(-4); add('rep', 12); return '징계를 받았지만 시민들은 당신을 기억한다.'; } },
+      { t: '천룡인 몰래 시민을 피신시킨다', run: () => { if (P(0.6)) { add('rep', 8); addMerit(2); return '행렬이 오기 전에 골목의 시민들을 모두 대피시켰다.'; } addMerit(-6); add('rep', 6); return '들켰다. 감봉 처분을 받았다.'; } },
     ] },
   { id: 'n_buster', w: 0.6, once: true, cond: () => isNavy() && G.job.rank >= 8, title: '버스터 콜',
     text: '한 섬에 버스터 콜이 발동됐다. 피난선에는 아직 민간인이 있다.',
     choices: [
-      { t: '명령대로 포격', run: () => { addMerit(15); add('rep', -15); return '섬은 지도에서 사라졌다.'; } },
+      { t: '명령대로 포격', run: () => { addMerit(15); add('rep', -6); return '섬은 지도에서 사라졌다.'; } },
       { t: '피난선을 먼저 보호', run: () => { addMerit(5); add('rep', 15); rec('버스터 콜의 양심'); return '명령 위반 직전까지 버티며 피난선을 지켰다.'; } },
     ] },
   { id: 'n_mentor', w: 0.7, once: true, cond: () => isNavy(), title: '영웅의 지도',
@@ -644,6 +646,160 @@ const EVENTS = [
           return '정의의 코트를 바다에 던졌다. ' + becomePirate(false, true);
         } },
       { t: '안에서 바꾼다', run: () => { add('rep', 3); return '조직 안에서 싸우기로 했다.'; } },
+    ] },
+
+  /* =================== 8살: 스승 =================== */
+  { id: 'tree8', forced: true, title: '여덟 살, 첫 스승',
+    text: () => isCelestial() ? '성지의 가정교사들이 무엇을 배우고 싶은지 묻는다.' : '여덟 살이 되자 마을 어른들이 무엇을 배우고 싶은지 묻는다. 누구에게 배울까?',
+    choices: () => [
+      { t: G.place.id === 'wano' ? '사무라이 사범에게 검을 배운다' : '검술 사범에게 배운다', tag: '검술 개방', run: () => { learn('sword', 6); G.focus = 'sword'; rec('검술 사범의 제자'); return '목검을 처음 쥐었다. 사범이 말했다. "검은 마음으로 휘두르는 것이다." (수련 방향: 검술)'; } },
+      { t: '무술가에게 권법을 배운다', tag: '단련 +5', run: () => { train(5); G.focus = 'body'; rec('무술가의 제자'); return '매일 바위를 치며 주먹을 단련했다.'; } },
+      { t: '항해사에게 바다를 배운다', tag: '항해술', run: () => { G.flags.navigation = true; add('conn', 3); train(1); rec('항해사의 제자'); return '별과 바람과 해류 읽는 법을 배웠다. (도주 성공률 상승)'; } },
+      { t: '의사에게 의술을 배운다', tag: '체력', run: () => { G.flags.medic = true; add('hp', 6); add('conn', 2); rec('의사의 제자'); return '약초와 붕대 감는 법을 배웠다. 다쳤을 때 회복이 빨라진다.'; } },
+      { t: '아무에게도 안 배운다', run: () => { add('hp', 3); return '아직은 뛰어노는 게 더 좋다.'; } },
+    ] },
+
+  /* =================== 천룡인 (돈키호테 가문) =================== */
+  { id: 'ln_dq_life', w: 5, cd: 4, celestial: true, cond: () => isCelestial() && G.age >= 3, title: '성지의 나날',
+    text: () => pick(['노예가 무릎 꿇고 당신의 신발을 닦는다.', '하계를 내려다보는 정원에서 차를 마신다.', '형이 노예를 걷어차며 웃고 있다.']),
+    choices: [
+      { t: '당연하다는 듯 군다', run: () => { add('wealth', 2); add('rep', -2); return '천룡인에게 하계의 사람은 사람이 아니다. 그렇게 배웠다.'; } },
+      { t: '몰래 노예에게 음식을 준다', run: () => { add('food', -3); add('rep', 3); G.flags.kind = true; return '노예 소녀가 눈물을 글썽이며 빵을 받았다.'; } },
+      { t: '하계에 대해 묻는다', run: () => { add('conn', 2); return '"하계는 더럽고 미개한 곳이란다." 어머니는 그렇게만 말했다.'; } },
+    ] },
+  { id: 'ln_dq_fall', forced: true, title: '성지를 떠나다',
+    text: '아버지가 선언했다. "우리는 천룡인의 지위를 버리고 하계에서 사람으로 살겠다." 가족은 성지를 떠나 북쪽 바다의 외딴 마을로 내려왔다.',
+    choices: [
+      { t: '아버지를 따른다', run: () => fallFromGrace('아버지의 손을 잡고 레드 라인을 내려왔다.') },
+      { t: '아버지를 원망한다', run: () => { G.flags.grudge = true; return fallFromGrace('이를 갈며 아버지를 노려봤다. 언젠가 성지로 돌아가겠다.'); } },
+    ] },
+  { id: 'ln_dq_hunted', forced: true, title: '천룡인 사냥',
+    text: '마을 사람들이 당신 가족의 정체를 알아냈다. 횃불을 든 사람들이 집을 둘러쌌다.',
+    choices: [
+      { t: '맞서 싸운다', enemy: 30, run: () => fightResult(fight(30, 0.05, '성난 마을 사람들'),
+          () => { add('rep', -5); train(3); return '몽둥이를 빼앗아 휘둘렀다. 사람들이 물러났지만 증오는 더 깊어졌다.'; },
+          () => { hurt(10); return '불타는 집에서 간신히 빠져나왔다.'; }) },
+      { t: '도망친다', run: () => { hurt(6); add('food', -5); return '쓰레기 더미 속에 숨어 밤을 지새웠다.'; } },
+      { t: '울며 용서를 빈다', run: () => { hurt(8); add('rep', 3); return '"우리가 무슨 잘못을 했나요!" 몇몇이 고개를 돌렸다.'; } },
+    ] },
+  { id: 'ln_donquixote', w: 0.5, cd: 48, tag: 'bad', cond: () => G.lineage.id === 'donquixote' && G.flags.fallen && G.age >= 12, title: '천룡인의 피',
+    text: '누군가 당신이 옛 천룡인이라는 걸 알아챘다. 사람들의 눈빛이 변한다.',
+    choices: [
+      { t: '정면으로 견딘다', run: () => { hurt(5); add('rep', 3); return '돌을 맞으면서도 고개를 들었다.'; } },
+      { t: '이름을 숨기고 떠난다', run: () => { add('conn', -3); return '다른 마을에서 다른 이름으로 살았다.'; } },
+      { t: '공포로 입을 막는다', enemy: 35, run: () => fightResult(fight(35, 0.03, '마을 장정'),
+          () => { add('rep', -6); train(2); return '아무도 다시는 그 이야기를 꺼내지 않았다.'; },
+          () => '오히려 더 크게 당했다.') },
+    ] },
+
+  /* =================== 장수 =================== */
+  { id: 'g_longevity', w: 0.3, once: true, cond: () => G.age >= 30 && !G.flags.longevity, title: '장수의 비결',
+    text: '나이가 140살이 넘었다는 마녀 같은 의사를 만났다. "젊음의 비결 말이냐? 히-히-히!"',
+    choices: [
+      { t: '비결을 배운다', need: '재산 20', cond: () => G.stats.wealth >= 20, run: () => { add('wealth', -20); G.flags.longevity = true; rec('장수의 비결'); return '독한 술과 약초, 그리고 지독한 잔소리. 노환으로 죽을 확률이 크게 줄었다.'; } },
+      { t: '진찰만 받는다', run: () => { add('hp', 15); return '"아직 쓸 만한 몸이구먼." 등짝을 맞고 쫓겨났다.'; } },
+    ] },
+
+  /* =================== 식량 =================== */
+  { id: 'g_supply', w: 0, cd: 6, cond: () => G.stats.food < 15 && G.age >= 10 && !isCelestial(), title: '식량이 떨어져 간다',
+    text: () => atSea() ? '창고가 비어 간다. 다음 섬까지 버틸 수 있을까?' : '부엌 선반이 비어 간다. 뭔가 구해야 한다.',
+    choices: () => [
+      { t: '돈을 주고 산다', need: '재산 6', cond: () => G.stats.wealth >= 6, run: () => { add('wealth', -6); add('food', 15); return atSea() ? '지나가던 상선에게 식량을 샀다.' : '시장에서 쌀과 말린 고기를 샀다.'; } },
+      { t: atSea() ? '바다낚시를 한다' : '사냥과 채집을 나간다', run: () => { if (P(0.7)) { add('food', R(8, 14)); return '먹을 걸 넉넉히 구해 왔다.'; } hurt(R(3, 6)); add('food', R(2, 4)); return '고생만 하고 조금밖에 못 구했다.'; } },
+      { t: atSea() ? '상선을 턴다' : '창고에서 훔친다', tag: '위험', cond: () => !isNavy(), need: '해군은 불가', run: () => { add('rep', -6); if (P(0.65)) { add('food', R(12, 18)); return '들키지 않고 식량을 챙겼다.'; } hurt(8); return '들켜서 얻어맞았다.'; } },
+      { t: '허리띠를 졸라맨다', run: () => '조금만 더 버텨 보기로 했다.' },
+    ] },
+  { id: 'p_spoil', w: 1.5, tag: 'bad', cond: () => atSea(), title: '배 위의 사고',
+    text: () => pick(['창고를 열자 시큼한 냄새가 났다. 고기가 상했다.', '밤사이 쥐 떼가 식량 창고를 습격했다.', '선원 한 명이 몰래 식량을 빼돌리다 걸렸다.']),
+    choices: [
+      { t: '상한 건 버린다', run: () => { add('food', -R(5, 9)); return '아깝지만 바다에 버렸다.'; } },
+      { t: '아까우니 먹는다', tag: '위험', run: () => { add('food', -2); if (P(0.5)) { hurt(R(5, 10)); return '선원 절반이 배탈로 쓰러졌다.'; } return '다행히 아무도 탈이 나지 않았다.'; } },
+      { t: '요리사에게 맡긴다', run: () => { add('food', -R(2, 4)); if (P(0.5)) { add('hp', 3); return '요리사가 기적처럼 맛있는 수프를 만들었다.'; } return '요리사가 한숨을 쉬며 쓸 만한 것만 골라냈다.'; } },
+    ] },
+
+  /* =================== 네임드 해적단 =================== */
+  { id: 'y_scout', w: 2, cd: 12, cond: () => G.age >= 14 && G.age < 18 && G.job.type === 'none' && G.tree !== 'navy' && !isCelestial(), title: '유명 해적단의 스카우트',
+    text: '이름만 들어도 바다가 떨리는 해적단이 섬에 들렀다. 그 배의 간부가 당신을 눈여겨본다. "꼬마, 우리 배에 탈 생각 없나?"',
+    choices: () => [...crewOffers(3), { t: '아직은 이르다', run: () => '배가 떠나는 것을 끝까지 지켜보았다.' }] },
+  { id: 'p_independent', w: 2, cd: 16, cond: () => isPirate() && G.job.crewId && G.age >= 22, title: '독립의 갈림길',
+    text: () => `${myCrew().boss}이(가) 술잔을 건넸다. "네 배를 가질 때가 된 것 같구나."`,
+    choices: [
+      { t: '내 해적단을 세운다', run: () => { const c = myCrew(); G.job.crewId = null; G.crewName = `${G.name} 해적단`; add('crew', R(5, 12)); add('conn', 8); rec('독립'); return `${c.name}의 축복 속에 자신의 깃발을 올렸다. 이제 칠무해·사황의 길이 열린다.`; } },
+      { t: '이 배에 남는다', run: () => { add('conn', 3); return '"이 배가 내 집이다." 동료들이 환호했다.'; } },
+    ] },
+  { id: 'p_named', w: 1, cd: 16, cond: () => isPirate() && G.age >= 18, title: '거물 해적단과의 조우',
+    text: () => { const id = pickRivalCrew(); G.flags.foe = id; const c = NAMED_CREWS[id]; return `수평선에 ${c.boss}의 깃발이 보인다. 「${c.name}」이다.`; },
+    choices: () => { const c = NAMED_CREWS[G.flags.foe]; return [
+      { t: '싸움을 건다', enemy: c.power, kill: c.kill, tag: '위험', run: () => fightResult(fight(c.power, 0.25, c.boss, c.kill),
+          () => { add('crew', R(3, 8)); add('conn', 6); rec(`${c.name} 격파`); return `믿기 힘든 승리! 「${c.name}」을 물리쳤다. ` + addBounty(15000); },
+          () => { add('crew', -R(5, 12)); return `${c.boss}의 일격에 함대가 부서졌다. 겨우 살아남았다.`; }) },
+      { t: '피해서 돌아간다', tag: () => `성공 ${Math.round(escapeChance(0.6) * 100)}%`, run: () => { if (P(escapeChance(0.6))) return '항로를 틀어 마주치지 않았다.'; hurt(R(8, 15)); add('crew', -R(2, 5)); return '추격당해 포격을 맞았다.'; } },
+      { t: '술 한잔 청한다', run: () => { if (P(0.4 + G.stats.conn / 200)) { add('conn', 8); return `${c.boss}이(가) 껄껄 웃으며 술통을 굴려 보냈다. 바다의 거물과 인연이 생겼다.`; } hurt(R(5, 10)); return '"애송이가 감히." 위압감만으로 몸이 굳었다.'; } },
+    ]; } },
+  { id: 'n_named', w: 1.2, cd: 12, cond: () => isNavy() && G.job.rank >= 4, title: '거물 해적단 토벌령',
+    text: () => { const id = pickRivalCrew(); G.flags.foe = id; const c = NAMED_CREWS[id]; return `본부 긴급 명령: 「${c.name}」이 근해에 나타났다. 함대를 이끌고 대응하라.`; },
+    choices: () => { const c = NAMED_CREWS[G.flags.foe]; return [
+      { t: '정면으로 맞선다', enemy: c.power, kill: c.kill, tag: '위험', run: () => fightResult(fight(c.power, 0.25, c.boss, c.kill),
+          () => { G.job.captures += R(3, 8); addMerit(R(20, 30)); add('rep', 15); rec(`${c.name} 토벌`); return `「${c.name}」의 간부들을 체포했다! 해군 역사에 남을 전과다.`; },
+          () => { add('crew', -R(5, 10)); return '함대가 괴멸했다. 겨우 살아 돌아왔다.'; }) },
+      { t: '민간인 대피를 우선한다', run: () => { add('rep', 10); addMerit(4); return '전투는 피했지만 섬 주민들을 모두 구했다.'; } },
+      { t: '증원을 기다린다', run: () => { addMerit(2); return '대장급 증원이 도착할 때까지 거리를 유지했다.'; } },
+    ]; } },
+  { id: 'n_guard', w: 2, tag: 'good', cond: () => isNavy(), title: '마을 수비 임무',
+    text: '해적의 습격 예고가 있는 마을에 배치됐다.',
+    choices: [
+      { t: '마을 앞바다를 지킨다', enemy: () => navyEnemy(-5), run: () => fightResult(fight(navyEnemy(-5), 0.06, '습격 해적'),
+          () => { add('rep', 8); addMerit(R(3, 5)); G.job.captures += 1; return '해적선을 막아냈다. 마을 사람들이 꽃다발을 건넸다.'; },
+          () => { add('rep', 3); return '피해를 줄이는 데 그쳤지만 주민들은 고마워했다.'; }) },
+      { t: '주민들에게 대피 훈련을 시킨다', run: () => { add('rep', 6); add('conn', 3); return '아이들까지 대피로를 외웠다.'; } },
+      { t: '마을 청년들을 훈련시킨다', run: () => { add('rep', 4); train(2); return '자경단이 생겼다.'; } },
+    ] },
+
+  /* =================== 세계의 큰 사건 =================== */
+  { id: 'w_marineford', w: 3, once: true, tag: 'major', cond: () => G.age >= 18, title: '정상전쟁',
+    text: '해군 본부가 거물 해적의 공개 처형을 발표했다. 사황의 해적단이 마린포드로 향하고, 칠무해와 해군 대장들이 집결했다. 세계가 숨을 죽였다.',
+    choices: () => [
+      { t: '해적 편으로 참전한다', cond: () => isPirate(), need: '해적만', enemy: 140, kill: 0.08, tag: '위험', run: () => fightResult(fight(140, 0.3, '해군 대장', 0.08),
+          () => { add('conn', 15); add('crew', R(3, 8)); rec('정상전쟁 생존'); return '불과 얼음과 빛이 쏟아지는 전장에서 살아남았다. 세상이 당신의 이름을 기억한다. ' + addBounty(30000); },
+          () => { add('crew', -R(8, 15)); rec('정상전쟁 생존'); return '처참한 패배. 그래도 살아서 바다로 돌아왔다.'; }) },
+      { t: '해군 방어선을 지킨다', cond: () => isNavy(), need: '해군만', enemy: 140, kill: 0.08, tag: '위험', run: () => fightResult(fight(140, 0.3, '사황 해적단', 0.08),
+          () => { addMerit(30); add('rep', 15); rec('정상전쟁 생존'); return '방어선을 끝까지 지켰다. 원수가 직접 당신의 이름을 불렀다.'; },
+          () => { addMerit(8); rec('정상전쟁 생존'); return '중상을 입고 후송되었다.'; }) },
+      { t: '"이제 그만!" 전쟁을 멈추라 외친다', tag: '위험', cond: () => atSea(), need: '참전자만', run: () => {
+          if (P(0.35)) { add('rep', 20); add('conn', 10); rec('전쟁을 멈춘 목소리'); return '당신의 외침에 전장이 한순간 멈췄다. 그 몇 초가 수많은 목숨을 살렸다.'; }
+          hurt(20); return '목소리는 포성에 묻혔다.'; } },
+      { t: '영상 전전벌레로 지켜본다', run: () => { rec('정상전쟁 목격'); return '광장의 화면 앞에서 모두가 말을 잃었다. 한 시대가 끝나고 있었다.'; } },
+    ] },
+  { id: 'w_impeldown', w: 2, once: true, tag: 'major', cond: () => G.age >= 20 && atSea(), title: '임펠 다운 대탈옥',
+    text: '바다 밑 대감옥 임펠 다운에서 사상 최대의 탈옥이 일어났다. 레벨 6의 흉악범들이 바다로 쏟아져 나온다.',
+    choices: () => isNavy() ? [
+      { t: '탈옥수를 추격한다', enemy: () => navyEnemy(15), run: () => fightResult(fight(navyEnemy(15), 0.15, '탈옥수'),
+          () => { G.job.captures += R(2, 5); addMerit(R(10, 16)); add('rep', 6); return '흉악범 여럿을 다시 감옥에 넣었다.'; },
+          () => '탈옥수들의 반격에 크게 다쳤다.') },
+      { t: '항구 봉쇄에 집중한다', run: () => { addMerit(5); add('rep', 4); return '민간 항구를 지켜냈다.'; } },
+    ] : [
+      { t: '탈옥수를 동료로 맞는다', run: () => { add('crew', R(5, 10)); add('rep', -6); return '거친 놈들이 배에 올랐다. ' + addBounty(5000); } },
+      { t: '혼란을 틈타 보물을 챙긴다', run: () => { add('wealth', R(10, 20)); return '정부 수송선을 털었다.'; } },
+      { t: '엮이지 않는다', run: () => '괴물들과는 거리를 두었다.' },
+    ] },
+  { id: 'w_wano', w: 2, once: true, tag: 'major', cond: () => G.age >= 20 && (atSea() || G.place.id === 'wano' || G.place.id === 'onigashima'), title: '오니가시마 결전',
+    text: '와노쿠니의 사무라이와 해적 동맹이 오니가시마로 쳐들어간다. 상대는 「이 세상에서 가장 강한 생물」의 군단.',
+    choices: () => [
+      { t: '동맹군에 합류한다', cond: () => !isNavy() && G.job.crewId !== 'beasts', need: '해군·백수 해적단 불가', enemy: 160, kill: 0.15, tag: '위험', run: () => fightResult(fight(160, 0.3, '「백수」', 0.15),
+          () => { add('rep', 20); add('conn', 12); rec('오니가시마 결전 승리'); G.flags.escaped = true; return '새벽, 와노쿠니의 하늘에 해가 떴다. 20년 만의 개국이다.' + (isPirate() ? ' ' + addBounty(40000) : ''); },
+          () => { hurt(15); return '전장에서 쓰러졌다가 동료에게 업혀 나왔다.'; }) },
+      { t: '백수 해적단 편에서 싸운다', cond: () => isPirate(), need: '해적만', enemy: 150, run: () => fightResult(fight(150, 0.25, '동맹군'),
+          () => { add('wealth', 20); add('rep', -10); return '침입자들을 막아냈지만 세상은 당신을 악당으로 기억한다. ' + addBounty(15000); },
+          () => '동맹군의 기세에 밀려났다.') },
+      { t: '해군으로서 사태를 지켜본다', cond: () => isNavy(), need: '해군만', run: () => { addMerit(4); return '결과 보고서를 쓰며 시대가 바뀌는 걸 느꼈다.'; } },
+      { t: '바다 건너 소식만 듣는다', run: () => { rec('와노쿠니 개국 목격'); return '「와노쿠니 개국」이라는 신문 1면을 오래 들여다봤다.'; } },
+    ] },
+  { id: 'w_reverie', w: 1.5, once: true, tag: 'major', cond: () => G.age >= 16, title: '세계회의',
+    text: '4년에 한 번, 각국의 왕들이 성지 마리조아에 모인다. 이번 회의에서는 「칠무해 제도 철폐」가 논의된다는 소문이다.',
+    choices: [
+      { t: '찬성한다', run: () => { if (isPirate() && G.job.stage === 1) return '자기 목줄을 끊는 일에 찬성하다니, 묘한 기분이다.'; return '해적에게 특권 따위 필요 없다.'; } },
+      { t: '반대한다', run: () => '칠무해가 없어지면 바다의 균형이 무너진다.' },
+      { t: '관심 없다', run: () => '왕들의 회의는 먼 나라 이야기다.' },
     ] },
 
   /* =================== 노년 =================== */
@@ -739,7 +895,7 @@ const EVENTS = [
     } },
   { id: 'pl_marineford', w: 2, tag: 'good', cond: () => G.place.id === 'marineford' && G.age < 18, title: '해군 본부 견학',
     run: () => { train(2); add('rep', 3); G.flags.inspiredNavy = true; return '거대한 본부 요새 안을 구경했다. 대장들의 기운이 피부로 느껴졌다.'; } },
-  { id: 'pl_sabaody', w: 2, tag: 'bad', cond: () => G.place.id === 'sabaody' && !atSea(), title: '인간 사냥꾼',
+  { id: 'pl_sabaody', w: 2, tag: 'bad', cond: () => G.place.id === 'sabaody' && !atSea() && !G.flags.celestial, title: '인간 사냥꾼',
     text: '인간 경매장에 팔 "상품"을 찾는 사냥꾼들이 당신을 노린다.',
     choices: [
       { t: '도망친다', run: () => { if (P(0.6)) return '맹그로브 사이로 숨어 빠져나갔다.'; hurt(10); add('wealth', -5); return '붙잡혔다가 가까스로 탈출했다. 가진 것은 모두 빼앗겼다.'; } },
@@ -814,3 +970,10 @@ const EVENTS = [
       { t: '섬에 남는다', run: () => '아직은 때가 아니다.' },
     ] },
 ];
+
+/* 세계관 이야기 (스탯 변화 없음): LORE 에서 생성 */
+LORE.forEach((l, i) => EVENTS.push({
+  id: `lore_${i}`, w: 0.25, cd: 60, lore: true, title: l.title,
+  cond: l.cond || null,
+  run: () => (typeof l.text === 'function' ? l.text() : l.text),
+}));

@@ -263,3 +263,17 @@ input { font: inherit; }
 .exit { color: var(--muted); }
 .confirm-card { width: min(420px, 100%); }
 button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
+
+/* ---------- 소속 이점 / 희귀도 / 세계관 ---------- */
+.perk { margin-top: 6px; font-size: 12px; color: var(--gold-hi); }
+.entry.lore { border-left-color: var(--c-crew); background: var(--panel-2); }
+.entry.lore .entry-text { color: var(--muted); font-style: italic; }
+.rarity { margin-top: 18px; }
+.rarest { margin: 4px 0 10px; }
+.rarest b { color: var(--gold-hi); }
+.rarity-list { display: flex; flex-direction: column; gap: 6px; margin-bottom: 8px; }
+.rarity-row { position: relative; display: flex; justify-content: space-between; gap: 12px; padding: 6px 10px; border-radius: 8px; background: var(--panel-2); overflow: hidden; font-size: 14px; }
+.rarity-row span, .rarity-row b { position: relative; z-index: 1; }
+.rarity-row b { font-variant-numeric: tabular-nums; color: var(--gold-hi); font-weight: 500; white-space: nowrap; }
+.rarity-row i { position: absolute; left: 0; top: 0; bottom: 0; background: var(--gold-soft); }
+.choice-desc { display: block; font-size: 12px; color: var(--muted); margin-top: 3px; margin-left: 22px; }

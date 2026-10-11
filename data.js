@@ -104,7 +104,17 @@ const FAMILIES = {
   orphan: { name: '고아',        wealth: 0,  support: 1, born: '부모 없이 고아로 자람' },
   pirate: { name: '해적의 집',   wealth: 12, support: 2, born: '해적의 아이로 태어남' },
   navy:   { name: '해군 집안',   wealth: 25, support: 3, born: '해군 집안에서 태어남' },
+  celestial: { name: '천룡인',     wealth: 95, support: 5, born: '천룡인으로 태어남' },
+  fallen: { name: '몰락한 천룡인', wealth: 3,  support: 1, born: '몰락한 천룡인' },
 };
+
+/* 선택 화면에 나오지 않는 장소 (가문·이벤트로만 간다) */
+const EXTRA_PLACES = [
+  { id: 'marijoa', name: '성지 마리조아', sea: '레드 라인 꼭대기', diff: 'EZ', tag: '천룡인의 성지',
+    desc: '세계 정부 창조주들의 후손, 천룡인이 사는 성지. 지상의 사람들은 이곳을 올려다볼 뿐이다.', fam: { celestial: 1 } },
+  { id: 'northvillage', name: '북쪽 바다 외딴 마을', sea: '북쪽 바다', diff: 'HARD', tag: '몰락한 자의 피난처',
+    desc: '천룡인을 증오하는 사람들이 사는 가난한 마을. 이곳에 신분을 숨길 곳은 없다.', fam: { poor: 1 } },
+];
 
 /* ---------- 가문 (혈통) ----------
  * king: 패왕색 소질 확률 · deathMul/dmgMul: 전투 사망/피해 배율 · pow: 전투력 보너스
@@ -124,10 +134,10 @@ const LINEAGES = [
     desc: '아라바스타의 왕족. 백성의 신망을 받으며 인맥과 평판이 잘 쌓인다.' },
   { id: 'hero', name: '해군 영웅의 가문', w: 3, family: 'navy', xp: { arm: 1.4 }, meritMul: 1.3, haki: true, places: { marineford: 10, shells: 4 },
     desc: '전설적인 해군 영웅의 피. 일찍 패기에 눈뜨고 무장색이 강하며, 해군에서 공적을 빨리 쌓는다.' },
-  { id: 'donquixote', name: '돈키호테 가문', w: 2, family: 'poor', king: 0.15, gain: { rep: 0.7 }, places: { dressrosa: 6 },
-    desc: '지상으로 내려온 몰락한 천룡인의 후예. 세상의 증오 속에 자랐다. 평판이 잘 오르지 않는다.' },
-  { id: 'giant', name: '엘바프 전사의 피', w: 2, pow: 8, maxHp: 15, places: { elbaf: 15 },
-    desc: '거인족 전사의 피가 섞였다. 체격이 크고 힘이 세며 쉽게 쓰러지지 않는다.' },
+  { id: 'donquixote', name: '돈키호테 가문', w: 2, family: 'celestial', forcePlace: 'marijoa', king: 0.2, gain: { rep: 0.7 }, places: { dressrosa: 6 },
+    desc: '천룡인 가문. 성지 마리조아에서 천룡인으로 태어난다(출생지 선택 무시). 여덟 살에 운명이 바뀐다. 평판이 잘 오르지 않는다.' },
+  { id: 'giant', name: '엘바프 전사의 피', w: 2, pow: 8, maxHp: 15, longevity: 0.4, places: { elbaf: 15 },
+    desc: '거인족 전사의 피가 섞였다. 체격이 크고 힘이 세며 쉽게 쓰러지지 않는다. 오래 산다.' },
   { id: 'lunarian', name: '루나리아족의 후예', w: 1, deathMul: 0.75, dmgMul: 0.9, gain: { rep: 0.8 },
     desc: '멸족했다던 붉은 땅 위의 민족. 불꽃을 두른 몸은 웬만해선 죽지 않는다. 정부가 노린다.' },
 ];
@@ -178,4 +188,48 @@ const HEADLINES = [
   '「루키 해적단, 위대한 항로 입성」',
   '「천룡인 피습 사건, 범인은 아직 오리무중」',
   '「바다 열차 신규 노선 개통」',
+];
+
+/* ---------- 네임드 해적단 ----------
+ * power: 전투력 · kill: 싸울 때 즉사 위험 · crew: 입단 시 선원 보정(승률)
+ * perk: 입단 중 이점 (pow, deathMul, dmgMul, bountyMul, gain, foodBonus, escape, hakiOpen) */
+const NAMED_CREWS = {
+  whitebeard: { name: '흰수염 해적단', boss: '「흰수염」', power: 175, kill: 0.15, crew: 60, tier: '사황',
+    perk: { deathMul: 0.75, pow: 10 }, perkText: '「아들」을 지키는 아버지: 사망 확률 ×0.75, 전투력 +10' },
+  redhair: { name: '빨간 머리 해적단', boss: '「빨간 머리」', power: 170, kill: 0.12, crew: 50, tier: '사황',
+    perk: { pow: 8, gain: { conn: 1.3 }, hakiOpen: true }, perkText: '패기의 해적단: 패기 개방, 인맥 상승 ×1.3, 전투력 +8' },
+  bigmom: { name: '빅 맘 해적단', boss: '「빅 맘」', power: 165, kill: 0.15, crew: 60, tier: '사황',
+    perk: { pow: 5, foodBonus: 2 }, perkText: '과자의 나라: 매 계절 식량 +2, 전투력 +5' },
+  beasts: { name: '백수 해적단', boss: '「백수」', power: 180, kill: 0.2, crew: 60, tier: '사황',
+    perk: { pow: 15, dmgMul: 0.85, gain: { rep: 0.7 } }, perkText: '강자의 군단: 전투력 +15, 받는 피해 ×0.85, 평판 상승 ×0.7' },
+  blackbeard: { name: '검은수염 해적단', boss: '「검은수염」', power: 160, kill: 0.2, crew: 40, tier: '사황',
+    perk: { pow: 8, bountyMul: 1.3, gain: { rep: 0.7 } }, perkText: '어둠의 야심: 현상금 ×1.3, 전투력 +8, 평판 상승 ×0.7' },
+  strawhat: { name: '밀짚모자 일당', boss: '「밀짚모자」', power: 150, kill: 0.1, crew: 15, tier: '루키',
+    perk: { deathMul: 0.8, bountyMul: 1.5, gain: { conn: 1.3 } }, perkText: '세계를 뒤흔드는 일당: 현상금 ×1.5, 사망 확률 ×0.8, 인맥 ×1.3' },
+  heart: { name: '하트 해적단', boss: '「죽음의 외과의」', power: 115, kill: 0.08, crew: 20, tier: '루키',
+    perk: { pow: 5, dmgMul: 0.85, natural: 10 }, perkText: '의사 선장: 받는 피해 ×0.85, 자연 회복 상한 +10' },
+  kid: { name: '키드 해적단', boss: '「캡틴 키드」', power: 115, kill: 0.1, crew: 20, tier: '루키',
+    perk: { pow: 10, bountyMul: 1.3 }, perkText: '난폭한 루키: 전투력 +10, 현상금 ×1.3' },
+  hawkins: { name: '호킨스 해적단', boss: '「마술사」', power: 105, kill: 0.3, crew: 20, tier: '루키',
+    perk: { deathMul: 0.7, escape: 0.1 }, perkText: '점괘와 짚인형: 사망 확률 ×0.7, 도주 +10%' },
+};
+
+/* ---------- 세계관 이야기 (스탯 변화 없음) ---------- */
+const LORE = [
+  { title: '뉴스 쿠', text: () => `신문 배달 갈매기가 지붕에 신문을 떨어뜨렸다. 1면: ${pick(HEADLINES)}` },
+  { title: '빙크스의 술', text: '어디선가 「빙크스의 술을 전하러 가세」 노랫소리가 바람을 타고 들려왔다.' },
+  { title: '새 수배서', text: '해군 게시판에 새 수배서가 붙었다. 사진 속 루키들은 하나같이 웃고 있다.' },
+  { title: '영상 전전벌레', text: '광장의 영상 전전벌레가 먼 바다의 소식을 비췄다. 사람들이 모여들었다.' },
+  { title: '로그 포스', text: '여행자의 로그 포스 바늘이 다음 섬을 가리키며 떨렸다. 위대한 항로에서는 나침반이 듣지 않는다.', cond: () => G.age >= 8 },
+  { title: '유령선 목격담', text: '안개 낀 밤바다에서 노래하는 해골이 탄 배를 봤다는 소문이 돈다.' },
+  { title: '해적왕의 전설', text: '노인들이 모이면 꼭 골드 로저 이야기다. "그 남자가 마지막에 웃었지."' },
+  { title: '하늘에서 떨어진 배', text: '하늘에서 낡은 범선이 떨어져 바다에 처박혔다. 하늘섬이 정말 있는 걸까.' },
+  { title: '혁명군의 소문', text: '어느 왕국이 하룻밤 사이에 뒤집혔다는 소문. 사람들은 「혁명가 드래곤」의 이름을 속삭인다.' },
+  { title: '천재 과학자', text: '세계 정부의 천재 과학자가 인공 악마의 열매를 만들었다는 소문이 돈다.' },
+  { title: '쌍둥이 곶의 고래', text: '레드 라인에 머리를 박는 거대한 고래 이야기를 들었다. 50년째 동료를 기다린다고 한다.' },
+  { title: '세계 최강의 남자', text: '「세계 최강의 남자」가 어느 바다를 지나갔다는 소식만으로 해군 지부들이 긴장했다.' },
+  { title: '바다 열차', text: '안개 너머로 바다 열차의 기적 소리가 길게 울렸다.', cond: () => G.place.id === 'water7' || G.place.id === 'loguetown' },
+  { title: '흘러온 포스터', text: '바다에서 젖은 포스터를 건졌다. 「세계 귀족 마리조아 방문 환영」.', cond: () => G.age >= 6 },
+  { title: '공백의 100년', text: '역사를 연구하던 학자가 정부에 끌려갔다는 소문. 이 세상엔 말해선 안 되는 역사가 있다.' },
+  { title: '바다의 별', text: '맑은 밤, 수평선 위로 유성이 길게 떨어졌다. 뱃사람들은 그걸 바다의 별이라 불렀다.' },
 ];
