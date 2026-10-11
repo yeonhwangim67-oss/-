@@ -42,7 +42,7 @@ body {
 }
 button { font: inherit; color: inherit; cursor: pointer; }
 input { font: inherit; }
-.hidden { display: none !important; }
+[hidden] { display: none !important; }
 
 /* ---------- 공통 버튼 ---------- */
 .primary {
@@ -104,7 +104,7 @@ input { font: inherit; }
 
 /* ---------- 상단 바 ---------- */
 .topbar {
-  position: sticky; top: 0; z-index: 5;
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
   display: flex; align-items: center; gap: 28px;
   background: #11131b; border-bottom: 1px solid var(--line);
   padding: 14px 24px;
@@ -219,3 +219,35 @@ input { font: inherit; }
 @media (max-width: 480px) {
   .controls { margin-left: 0; width: 100%; justify-content: space-between; }
 }
+
+/* ---------- 무작위 / 가문 ---------- */
+.d-RANDOM { color: var(--muted); }
+.place.random { border-style: dashed; }
+.lineage-title { margin-top: 36px; }
+.lineage-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.lineage {
+  background: var(--panel); border: 1px solid var(--line); border-radius: 999px;
+  padding: 8px 16px; font-size: 14px;
+}
+.lineage:hover { border-color: var(--dim); }
+.lineage.on { border-color: var(--gold); background: var(--gold-soft); color: var(--gold-hi); }
+.lineage-desc { color: var(--muted); font-size: 14px; margin: 12px 0 0; min-height: 22px; }
+.lineage-line { display: flex; align-items: center; gap: 8px; margin-top: 10px; }
+.rand { font-size: 11px; color: var(--muted); border: 1px dashed var(--line); border-radius: 6px; padding: 1px 6px; font-family: var(--sans); font-weight: 400; vertical-align: middle; }
+.warn { color: var(--d-hard); }
+
+/* ---------- 기술 ---------- */
+.power { color: var(--gold-hi); font-size: 18px; margin-left: 6px; font-variant-numeric: tabular-nums; }
+.sub.small, .small { font-size: 12px; }
+.skills { display: flex; flex-direction: column; gap: 12px; margin-top: 12px; }
+.skill-top { display: flex; justify-content: space-between; gap: 8px; font-size: 14px; }
+.skill-top b { font-weight: 500; color: var(--gold-hi); text-align: right; }
+.skill-bar { height: 4px; background: var(--track); border-radius: 999px; margin-top: 5px; overflow: hidden; }
+.skill-bar > div { height: 100%; background: var(--gold); border-radius: 999px; transition: width .3s; }
+.skill-eff { font-size: 11px; color: var(--dim); margin-top: 3px; }
+.focus-chip { cursor: pointer; }
+.focus-chip:hover { border-color: var(--dim); }
+.focus-chip.on { background: var(--gold); color: #17140c; border-color: var(--gold); font-weight: 700; }
+.exit { color: var(--muted); }
+.confirm-card { width: min(420px, 100%); }
+button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
