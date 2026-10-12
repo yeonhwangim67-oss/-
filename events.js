@@ -233,7 +233,7 @@ const EVENTS = [
     ] },
 
   /* =================== 공통 =================== */
-  { id: 'g_fruit', w: 0.7, cd: 16, celestial: true, cond: () => !G.fruit && G.age >= 6, title: '수상한 열매',
+  { id: 'g_fruit', w: 0.1, cd: 60, celestial: true, cond: () => !G.fruit && G.age >= 6, title: '수상한 열매',
     text: '소용돌이 무늬가 새겨진 기묘한 열매를 발견했다. 악마의 열매일지도 모른다.',
     choices: [
       { t: '먹는다', tag: '열매', run: () => eatFruit() },
@@ -365,6 +365,7 @@ const EVENTS = [
       hurt(R(3, 8)); add('food', -R(3, 6));
       if (P(0.25)) {
         if (G.skills.rokushiki >= 4) return '파도에 휩쓸렸지만 월보로 허공을 박차 갑판으로 돌아왔다.';
+        if (hasMod('stormSafe')) return `파도에 휩쓸릴 뻔했지만 「${G.fruit.name}」의 힘으로 바다에 빠지지 않았다.`;
         if (G.fruit && !(G.stats.crew >= 5 && P(0.85))) {
           if (P(0.35 * D().death)) { G.stats.hp = 0; G.deathCause = '폭풍 속 바다에 빠져 익사 (능력자)'; return '거센 파도에 휩쓸려 바다에 빠졌다. 열매의 저주로 몸이 굳어 그대로 가라앉았다…'; }
           hurt(12); return '바다에 빠졌다! 힘이 빠져 가라앉던 순간 겨우 끌어올려졌다.';
@@ -1030,9 +1031,26 @@ const EVENTS = [
     text: '며칠을 헤맨 끝에, 안개 속에서 정말로 섬이 나타났다. 해안에는 오래된 신전과 깊은 숲, 그리고 난파선 한 척이 보인다.',
     choices: [
       { t: '신전으로 간다', tag: '위험', run: () => { if (P(0.5)) { add('wealth', R(30, 45)); rec('전설의 섬 발견'); return '신전 깊은 곳에 황금이 쌓여 있었다!'; } hurt(R(12, 18)); return '함정이 작동했다. 무너지는 신전에서 겨우 빠져나왔다.'; } },
-      { t: '숲으로 들어간다', run: () => { if (!G.fruit && P(0.3)) return '나무 꼭대기에 소용돌이 무늬 열매가 열려 있었다. 한 입 베어 물었다… ' + eatFruit(); add('food', R(10, 16)); train(2); return '거대한 짐승을 사냥하고 진귀한 과일을 따 왔다.'; } },
+      { t: '숲으로 들어간다', run: () => { if (!G.fruit && P(0.1)) return '나무 꼭대기에 소용돌이 무늬 열매가 열려 있었다. 한 입 베어 물었다… ' + eatFruit(); add('food', R(10, 16)); train(2); return '거대한 짐승을 사냥하고 진귀한 과일을 따 왔다.'; } },
       { t: '난파선을 뒤진다', run: () => { add('wealth', R(10, 18)); G.flags.history = true; return '난파선의 항해 일지에서 잃어버린 해적단의 이야기를 읽었다. 금화 몇 상자도 함께.'; } },
       { t: '불길하다, 돌아간다', run: () => { add('hp', 3); return '안개가 걷히자 섬은 온데간데없었다.'; } },
+    ] },
+
+  /* =================== 열매 각성 =================== */
+  { id: 'k_fruit_awaken', w: 3, once: true, cond: () => G.fruit && !G.fruit.awakened && G.skills.fruit >= 3 && G.age >= 22, title: '열매의 각성',
+    text: () => `오랜 수련 끝에 「${G.fruit.name}」의 힘이 몸 깊숙이 녹아드는 것을 느꼈다. 한계 너머의 무언가가 손끝에 닿아 있다.`,
+    choices: () => [
+      { t: '한계를 넘어선다', desc: fruitData().awakenText, run: () => { awakenFruit(); return `열매가 각성했다! 「${fruitData().awakenName}」. ${fruitData().awakenText}.`; } },
+      { t: '아직은 때가 아니다', run: () => { learn('fruit', 0); return '힘을 억눌렀다. 위기의 순간에 저절로 깨어날지도 모른다.'; } },
+    ] },
+  { id: 'g_fruit_rumor', w: 0.6, cd: 32, cond: () => !G.fruit && G.age >= 16 && !isCelestial(), title: '악마의 열매 경매',
+    text: '지하 경매장에 악마의 열매가 나왔다는 소문이다. 시작가부터 어마어마하다.',
+    choices: [
+      { t: '입찰한다', need: '재산 60', cond: () => G.stats.wealth >= 60, run: () => { add('wealth', -60); if (P(0.6)) return '낙찰받았다! 떨리는 손으로 한 입 베어 물었다… ' + eatFruit(); return '낙찰받은 열매는 정교한 가짜였다. 경매장은 이미 사라졌다.'; } },
+      { t: '경매장을 턴다', enemy: 70, tag: '위험', run: () => fightResult(fight(70, 0.15, '경매장 경비'),
+          () => { add('rep', -8); if (P(0.5)) return '혼란 속에서 열매 상자를 낚아챘다… ' + eatFruit(); add('wealth', 15); return '열매는 놓쳤지만 금고를 털었다.'; },
+          () => '경비들에게 몰매를 맞고 쫓겨났다.') },
+      { t: '구경만 한다', run: () => '열매는 어느 거물 해적에게 낙찰됐다.' },
     ] },
 
   /* =================== 노년 =================== */
@@ -1168,7 +1186,7 @@ const EVENTS = [
     text: '콜로세움 투기 대회. 우승 상품은 악마의 열매라는 소문이다.',
     choices: [
       { t: '참가한다', enemy: 55, tag: '위험', run: () => fightResult(fight(55, 0.12, '검투사'),
-          () => { add('rep', 8); if (!G.fruit && P(0.4)) return '우승했다! 상품으로 받은 열매를… ' + eatFruit(); add('wealth', 15); return '준결승까지 올라 상금을 받았다.'; },
+          () => { add('rep', 8); if (!G.fruit && P(0.15)) return '우승했다! 상품으로 받은 열매를… ' + eatFruit(); add('wealth', 15); return '준결승까지 올라 상금을 받았다.'; },
           () => '1회전에서 탈락했다.') },
       { t: '관람만 한다', run: () => { train(1); return '검투사들의 싸움에서 많은 걸 배웠다.'; } },
     ] },

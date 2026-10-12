@@ -60,14 +60,20 @@ const isCelestial = () => G.flags.celestial && !G.flags.fallen;
 /** 소속 네임드 해적단 */
 const myCrew = () => (isPirate() && G.job.crewId ? NAMED_CREWS[G.job.crewId] : null);
 /** 가문 + 소속 해적단의 보정 (곱) */
-function mulMod(key) {
-  const c = myCrew();
-  return (G.lineage[key] || 1) * ((c && c.perk[key]) || 1);
+/** 먹은 열매의 고유 능력 (각성하면 각성 능력이 더해진다) */
+function fruitPerks() {
+  if (!G.fruit) return [];
+  const f = FRUITS.find(x => x.name === G.fruit.name);
+  return G.fruit.awakened ? [f.perk, f.awaken] : [f.perk];
 }
-function sumMod(key) {
+function modSources() {
   const c = myCrew();
-  return (G.lineage[key] || 0) + ((c && c.perk[key]) || 0);
+  return [G.lineage, c ? c.perk : null, ...fruitPerks()].filter(Boolean);
 }
+/** 가문 + 소속 해적단 + 열매 능력의 보정 */
+function mulMod(key) { return modSources().reduce((m, o) => m * (o[key] || 1), 1); }
+function sumMod(key) { return modSources().reduce((m, o) => m + (o[key] || 0), 0); }
+const hasMod = key => modSources().some(o => o[key]);
 
 function josa(word, a, b) {
   const c = word.charCodeAt(word.length - 1);
@@ -165,6 +171,7 @@ function canRokushiki() { return isNavy() || !!G.flags.rokushiki; }
 function learn(k, xp) {
   const sk = SKILLS[k];
   if (k === 'king' && G.skills.king === 0) return;
+  if (k === 'fruit' && !G.fruit) return;
   if (k === 'rokushiki' && !canRokushiki()) G.flags.rokushiki = true;
   if (k === 'sword') G.flags.swordOpen = true;
   if (G.skills[k] >= skillMax(k)) return;
@@ -201,6 +208,7 @@ function focusOptions() {
   if (canRokushiki()) o.push({ k: 'rokushiki', name: '육식' });
   if (canHaki()) o.push({ k: 'obs', name: '견문색' }, { k: 'arm', name: '무장색' });
   if (G.skills.king >= 1) o.push({ k: 'king', name: '패왕색' });
+  if (G.fruit) o.push({ k: 'fruit', name: '열매 숙련' });
   return o;
 }
 function currentFocus() {
@@ -220,15 +228,21 @@ function powerParts() {
     ['기초', Math.round(G.stats.hp * 0.3 + G.train)],
     ['기술', skillPower()],
     ['선원', crewPower()],
-    ['열매', G.fruit ? FRUIT_TYPES[G.fruit.type].pow : 0],
-    ['혈통·소속', sumMod('pow')],
+    ['열매', fruitPower()],
+    ['혈통·소속', sumMod('pow') - fruitPerks().reduce((m, o) => m + (o.pow || 0), 0)],
     ['지위', isPirate() ? G.job.stage * 15 : isNavy() ? G.job.rank * 3 : 0],
   ];
   return parts.filter(([, v]) => v);
 }
+/** 열매 전투력: 계통 기본값 × 숙련도 + 열매 고유 능력 */
+function fruitPower() {
+  if (!G.fruit) return 0;
+  const base = FRUIT_TYPES[G.fruit.type].pow * (0.6 + 0.2 * G.skills.fruit);
+  return Math.round(base + fruitPerks().reduce((m, o) => m + (o.pow || 0), 0));
+}
 function power() { return powerParts().reduce((a, [, v]) => a + v, 0); }
 function winChance(enemy) {
-  return clamp(0.5 + (power() - enemy * D().enemy) / 50, 0.05, 0.95);
+  return clamp(0.5 + (power() - enemy * D().enemy) / 50 + sumMod('winBonus'), 0.05, 0.95);
 }
 function escapeChance(base) {
   let p = base + (G.flags.navigation ? 0.1 : 0) + G.skills.obs * 0.05 + sumMod('escape');
@@ -276,6 +290,12 @@ function fight(enemy, lethal, foe, kill = 0) {
     if (f !== 'body') learn(f, 1);
     return 'win';
   }
+  // 궁지에 몰린 순간의 각성
+  if (G.fruit && !G.fruit.awakened && G.skills.fruit >= 3 && G.age >= 20 && P(0.15)) {
+    awakenFruit();
+    G.extra.push(`쓰러지기 직전, 열매가 각성했다! 「${fruitData().awakenName}」의 힘으로 전세를 뒤집었다.`);
+    return 'win';
+  }
   if (lethal > 0 && P(clamp(lethal * D().death * deathMul(), 0, 0.9))) {
     G.deltas.hp = (G.deltas.hp || 0) - G.stats.hp;
     G.stats.hp = 0;
@@ -286,12 +306,17 @@ function fight(enemy, lethal, foe, kill = 0) {
   return 'lose';
 }
 
+const fruitData = () => FRUITS.find(x => x.name === G.fruit.name);
 function eatFruit() {
   const type = wpick(Object.keys(FRUIT_TYPES), t => FRUIT_TYPES[t].w);
-  const name = pick(FRUITS[type]);
-  G.fruit = { name, type };
-  rec(`${name} 능력자`);
-  return `끔찍한 맛이 혀를 감쌌다. 몸 깊은 곳에서 낯선 힘이 깨어난다. 「${name}」(${FRUIT_TYPES[type].name}). 대신 바다는 이제 당신을 받아주지 않는다.`;
+  const f = pick(FRUITS.filter(x => x.type === type));
+  G.fruit = { name: f.name, type, awakened: false };
+  rec(`${f.name} 능력자`);
+  return `끔찍한 맛이 혀를 감쌌다. 몸 깊은 곳에서 낯선 힘이 깨어난다. 「${f.name}」(${FRUIT_TYPES[type].name}): ${f.ability}. 대신 바다는 이제 당신을 받아주지 않는다. (수련 방향에 「열매 숙련」 추가)`;
+}
+function awakenFruit() {
+  G.fruit.awakened = true;
+  rec(`${G.fruit.name} 각성`);
 }
 
 /* ---------- 직업 전환 ---------- */
@@ -501,7 +526,7 @@ function onNewYear() {
   }
   // 노화: 80세부터 해마다 노환 사망 확률이 0.5%씩 오른다 (81세 0.5%, 82세 1%, …)
   if (G.age > OLD_AGE) {
-    const longevity = (G.lineage.longevity || 1) * (G.flags.longevity ? 0.25 : 1);
+    const longevity = mulMod('longevity') * (G.flags.longevity ? 0.25 : 1);
     if (P(OLD_AGE_STEP * (G.age - OLD_AGE) * longevity)) { G.stats.hp = 0; G.deathCause = '노환으로 평온하게 눈을 감음'; }
   }
 }
@@ -634,7 +659,7 @@ function statRow(def) {
 function skillsCard() {
   const opts = focusOptions();
   const focus = currentFocus();
-  const shown = Object.keys(SKILLS).filter(k => G.skills[k] > 0 || opts.some(o => o.k === k));
+  const shown = Object.keys(SKILLS).filter(k => k !== 'fruit' && (G.skills[k] > 0 || opts.some(o => o.k === k)));
   const rows = shown.map(k => {
     const max = G.skills[k] >= skillMax(k);
     const pct = max ? 100 : Math.min(100, G.skillXp[k] / skillNeed(k) * 100);
@@ -672,9 +697,22 @@ function renderSide() {
     const next = NAVY_RANKS[j.rank + 1];
     jobSub = `공적 ${j.merit}${next ? ` / 다음 계급 ${next[1]}` : ''} · 체포 ${j.captures}명${G.flags.rankBlock ? `<br><span class="warn">${G.flags.rankBlock}</span>` : ''}`;
   }
-  const fruit = G.fruit
-    ? `<div class="big fruit-name">${esc(G.fruit.name)}</div><div class="sub">${FRUIT_TYPES[G.fruit.type].name} · 전투 사망 확률 ×${FRUIT_TYPES[G.fruit.type].death} · 헤엄 불가</div>`
-    : '<div class="big">없음</div><div class="sub">열매를 먹으면 싸움에서 죽을 확률이 줄어든다</div>';
+  let fruit = '<div class="big">없음</div><div class="sub">열매를 먹으면 싸움에서 죽을 확률이 줄어든다. 아주 드물게만 손에 들어온다.</div>';
+  if (G.fruit) {
+    const f = fruitData();
+    const lv = G.skills.fruit, max = lv >= skillMax('fruit');
+    const pct = max ? 100 : Math.min(100, G.skillXp.fruit / skillNeed('fruit') * 100);
+    fruit = `<div class="big fruit-name">${esc(f.name)}</div>
+      <div class="sub">${FRUIT_TYPES[f.type].name} · 사망 확률 ×${FRUIT_TYPES[f.type].death} · 헤엄 불가</div>
+      <p class="fruit-ability">${esc(f.ability)}</p>
+      <div class="skill" style="margin-top:10px">
+        <div class="skill-top"><span>숙련도</span><b>${G.fruit.awakened ? '각성' : SKILLS.fruit.levels[lv - 1] || '입문 전'}</b></div>
+        <div class="skill-bar"><div style="width:${G.fruit.awakened ? 100 : pct.toFixed(0)}%"></div></div>
+      </div>
+      ${G.fruit.awakened
+        ? `<p class="fruit-awaken">각성: ${esc(f.awakenName)}. ${esc(f.awakenText)}</p>`
+        : `<p class="sub small">${max ? `달인이 되었다. 위기의 순간 또는 계기가 오면 「${esc(f.awakenName)}」으로 각성할 수 있다.` : '수련 방향에서 「열매 숙련」을 고르면 성장한다. 달인이 되면 각성할 수 있다.'}</p>`}`;
+  }
 
   $('#side').innerHTML = `
     <div class="card"><h3>${esc(G.name)}</h3><div class="sub">${G.gender} · ${G.family.name}</div>
@@ -777,7 +815,7 @@ function showEnd() {
   $('#end-body').innerHTML = `
     <dl class="kv"><dt>출생</dt><dd>${G.place.name} · ${G.family.name}</dd><dt>가문</dt><dd>${G.lineage.name}</dd><dt>최종</dt><dd>${jobTitle()}</dd>${detail}
     <dt>전투력</dt><dd>${power()}</dd><dt>기술</dt><dd>${skills}</dd>
-    <dt>열매</dt><dd>${G.fruit ? G.fruit.name : '없음'}</dd><dt>시드</dt><dd class="seed-val">${esc(G.seed)}</dd></dl>
+    <dt>열매</dt><dd>${G.fruit ? G.fruit.name + (G.fruit.awakened ? ' (각성)' : '') : '없음'}</dd><dt>시드</dt><dd class="seed-val">${esc(G.seed)}</dd></dl>
     ${rarityTable()}`;
   setTimeout(() => { $('#end').hidden = false; }, 600);
 }
@@ -941,4 +979,4 @@ function init() {
 init();
 
 // 디버그/테스트용
-window.__game = { get G() { return G; }, tick, choose, power, renderAll, rarityKeys, jobTitle, EVENTS };
+window.__game = { get G() { return G; }, tick, choose, power, renderAll, rarityKeys, jobTitle, eatFruit, awakenFruit, learn, EVENTS };

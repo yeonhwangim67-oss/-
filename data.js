@@ -151,11 +151,55 @@ const FRUIT_TYPES = {
   zoan:  { name: '동물계', pow: 18, death: 0.5,  w: 3 },
   logia: { name: '자연계', pow: 24, death: 0.35, w: 2 },
 };
-const FRUITS = {
-  para:  ['고무고무 열매', '잘린잘린 열매', '꽃꽃 열매', '실실 열매', '수술수술 열매', '흔들흔들 열매', '문문 열매', '가벼워 열매'],
-  zoan:  ['사람사람 열매', '소소 열매 모델 기린', '새새 열매 모델 불사조', '물고기물고기 열매 모델 청룡', '개개 열매 모델 늑대', '고양이고양이 열매 모델 표범'],
-  logia: ['이글이글 열매', '번쩍번쩍 열매', '얼음얼음 열매', '모래모래 열매', '연기연기 열매', '우르릉 열매', '부글부글 열매'],
-};
+/* 열매마다 고유 능력(perk)과 각성 능력(awaken)
+ * perk 키: pow(전투력) deathMul dmgMul escape(도주) natural(자연 회복 상한) longevity winBonus(승률) stormSafe(폭풍에도 안 빠짐) */
+const FRUITS = [
+  // 초인계
+  { name: '고무고무 열매', type: 'para', ability: '고무 몸: 타격이 통하지 않는다', perk: { dmgMul: 0.8 },
+    awakenName: '태양신 니카', awakenText: '세상을 웃게 만드는 해방의 전사', awaken: { pow: 30, deathMul: 0.7 } },
+  { name: '잘린잘린 열매', type: 'para', ability: '분리 인간: 베여도 죽지 않는다', perk: { deathMul: 0.85, escape: 0.1 },
+    awakenName: '천 갈래 몸', awakenText: '몸을 수백 조각으로 나눠 동시에 공격한다', awaken: { pow: 15 } },
+  { name: '꽃꽃 열매', type: 'para', ability: '어디서든 손을 피워 낸다: 정보와 도주에 강하다', perk: { escape: 0.15, winBonus: 0.03 },
+    awakenName: '거인의 손', awakenText: '건물만 한 팔을 피워 낸다', awaken: { pow: 20 } },
+  { name: '실실 열매', type: 'para', ability: '실로 사람을 조종한다', perk: { pow: 8, winBonus: 0.04 },
+    awakenName: '실의 세계', awakenText: '주변의 땅과 건물을 모두 실로 바꾼다', awaken: { pow: 25, dmgMul: 0.85 } },
+  { name: '수술수술 열매', type: 'para', ability: 'ROOM: 상처를 수술로 치료한다', perk: { natural: 10, deathMul: 0.85 },
+    awakenName: '불로수술', awakenText: '수명마저 다룰 수 있는 궁극의 수술', awaken: { pow: 20, longevity: 0.4 } },
+  { name: '흔들흔들 열매', type: 'para', ability: '진동: 공기와 땅을 깨뜨린다', perk: { pow: 15 },
+    awakenName: '세계를 멸망시키는 힘', awakenText: '바다 전체를 기울게 한다', awaken: { pow: 30 } },
+  { name: '문문 열매', type: 'para', ability: '어디든 문을 연다: 거의 항상 도망칠 수 있다', perk: { escape: 0.3 },
+    awakenName: '공간의 문', awakenText: '공기에도 문을 열어 공격을 흘려보낸다', awaken: { pow: 10, dmgMul: 0.8 } },
+  { name: '가벼워 열매', type: 'para', ability: '몸무게를 바꾼다: 폭풍에 날려가지 않는다', perk: { stormSafe: true, escape: 0.1 },
+    awakenName: '만 톤의 일격', awakenText: '하늘에서 떨어지며 섬을 부순다', awaken: { pow: 15 } },
+  // 동물계
+  { name: '사람사람 열매', type: 'zoan', ability: '짐승이 사람이 되었다: 의술과 회복', perk: { natural: 10, pow: 5 },
+    awakenName: '괴물 강화', awakenText: '이성을 지키며 거대한 괴물로 변한다', awaken: { pow: 20 } },
+  { name: '소소 열매 모델 기린', type: 'zoan', ability: '기린 변신: 긴 목으로 먼저 친다', perk: { pow: 5, dmgMul: 0.9 },
+    awakenName: '대포 같은 목', awakenText: '목을 대포처럼 휘두른다', awaken: { pow: 20 } },
+  { name: '새새 열매 모델 불사조', type: 'zoan', ability: '재생의 푸른 불꽃: 상처가 낫는다', perk: { deathMul: 0.6, natural: 15 },
+    awakenName: '불사의 날개', awakenText: '어떤 상처도 불꽃으로 되돌린다', awaken: { pow: 20, deathMul: 0.8 } },
+  { name: '물고기물고기 열매 모델 청룡', type: 'zoan', ability: '거대한 용 변신: 하늘을 난다', perk: { pow: 12, stormSafe: true },
+    awakenName: '열풍의 용', awakenText: '구름 위에서 불길을 내뿜는다', awaken: { pow: 30 } },
+  { name: '개개 열매 모델 늑대', type: 'zoan', ability: '늑대 변신: 날렵하고 질기다', perk: { pow: 8, escape: 0.05 },
+    awakenName: '달밤의 늑대', awakenText: '야수의 본능이 완전히 깨어난다', awaken: { pow: 20 } },
+  { name: '고양이고양이 열매 모델 표범', type: 'zoan', ability: '표범 변신: 순수한 살상력', perk: { pow: 10 },
+    awakenName: '맹수의 사냥', awakenText: '사냥감은 도망치지 못한다', awaken: { pow: 22 } },
+  // 자연계
+  { name: '이글이글 열매', type: 'logia', ability: '불꽃 인간: 몸이 불이 된다', perk: { pow: 10 },
+    awakenName: '대염계', awakenText: '주변 전체가 불바다가 된다', awaken: { pow: 25 } },
+  { name: '번쩍번쩍 열매', type: 'logia', ability: '빛 인간: 빛의 속도로 이동한다', perk: { escape: 0.3 },
+    awakenName: '빛의 심판', awakenText: '빛의 비가 쏟아진다', awaken: { pow: 20 } },
+  { name: '얼음얼음 열매', type: 'logia', ability: '얼음 인간: 바다를 얼려 걷는다', perk: { pow: 5, stormSafe: true },
+    awakenName: '빙하시대', awakenText: '섬 하나를 통째로 얼린다', awaken: { pow: 20 } },
+  { name: '모래모래 열매', type: 'logia', ability: '모래 인간: 닿는 것의 수분을 빼앗는다', perk: { pow: 8 },
+    awakenName: '사막의 왕', awakenText: '땅을 모래 지옥으로 바꾼다', awaken: { pow: 20 } },
+  { name: '연기연기 열매', type: 'logia', ability: '연기 인간: 붙잡히지 않는다', perk: { escape: 0.15, dmgMul: 0.9 },
+    awakenName: '백렵', awakenText: '연기로 거대한 그물을 친다', awaken: { pow: 15 } },
+  { name: '우르릉 열매', type: 'logia', ability: '번개 인간: 하늘의 목소리를 듣는다', perk: { pow: 10, escape: 0.1 },
+    awakenName: '천벌', awakenText: '섬 전체에 번개를 떨어뜨린다', awaken: { pow: 25 } },
+  { name: '부글부글 열매', type: 'logia', ability: '마그마 인간: 불보다 뜨겁다', perk: { pow: 15 },
+    awakenName: '유성화산', awakenText: '하늘에서 마그마 주먹이 쏟아진다', awaken: { pow: 25 } },
+];
 
 /* ---------- 기술 ----------
  * 숙련도(xp)가 차면 다음 단계. 필요 숙련 = base + 현재단계 × step
@@ -165,6 +209,7 @@ const SKILLS = {
   rokushiki: { name: '육식',   levels: ['면도', '철괴', '지건', '월보', '람각', '체풍'], base: 12, step: 4, pow: 4, bonus: 12, bonusName: '육왕총' },
   obs:       { name: '견문색', levels: ['견문색 입문', '견문색 숙련', '미래시'], base: 15, step: 15, pow: 5 },
   arm:       { name: '무장색', levels: ['무장색 입문', '무장 경화', '유류 (내부 파괴)'], base: 15, step: 18, pow: 8 },
+  fruit:     { name: '열매 숙련', levels: ['미숙', '숙련', '달인'], base: 15, step: 15, pow: 0 },
   king:      { name: '패왕색', levels: ['패왕색 각성', '패왕색 제어', '패왕색 부여'], base: 20, step: 20, pow: 10 },
 };
 const SKILL_EFFECT = {
@@ -173,6 +218,7 @@ const SKILL_EFFECT = {
   obs: '사망 확률 감소 · 도주 성공률 증가',
   arm: '전투력 크게 증가 · 경화부터 받는 피해 감소',
   king: '약한 적은 싸우지 않고 기절시킨다',
+  fruit: '숙련할수록 열매의 힘이 커진다. 달인이 되면 각성할 수 있다',
 };
 
 /* ---------- 직업 ---------- */
