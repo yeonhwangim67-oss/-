@@ -247,7 +247,7 @@ const EVENTS = [
     run: () => { G.skills.king = 1; rec('패왕색 각성'); return pick([
       '분노가 터진 순간 주변의 사람들이 거품을 물고 쓰러졌다. 왕의 자질, 패왕색이 깨어났다.',
       '위기 속에서 내지른 고함에 짐승들이 일제히 기절했다. 몸속 깊은 곳의 무언가가 깨어났다.']); } },
-  { id: 'g_famine', w: 1.5, tag: 'bad', cond: () => G.age >= 6 && !atSea() && !isCelestial(), title: '흉년',
+  { id: 'g_famine', w: 0.7, cd: 24, tag: 'bad', cond: () => G.age >= 6 && !atSea() && !isCelestial(), title: '흉년',
     text: () => pick(['바다도 땅도 인색한 해다. 먹을 것이 바닥나간다.', '해류가 바뀌어 물고기 떼가 사라졌다.', '병충해로 밭이 망가졌다.']),
     choices: [
       { t: '허리띠를 졸라맨다', run: () => { add('food', -R(6, 10)); return '하루 한 끼로 버텼다.'; } },
@@ -276,7 +276,7 @@ const EVENTS = [
       { t: '친구들과 함께 간다', run: () => { add('conn', 3); if (P(0.6)) { add('wealth', R(5, 10)); return '보물을 찾아 사이좋게 나눴다.'; } return '보물은 없었지만 즐거운 모험이었다.'; } },
       { t: '지도를 판다', run: () => { add('wealth', 5); return '호기심 많은 상인에게 지도를 넘겼다.'; } },
     ] },
-  { id: 'g_merchant', w: 1.5, cond: () => G.age >= 12, title: '떠돌이 상인',
+  { id: 'g_merchant', w: 1, cd: 16, cond: () => G.age >= 12, title: '떠돌이 상인',
     text: '커다란 짐을 진 떠돌이 상인이 말을 건다. "필요한 거 있수?"',
     choices: [
       { t: '식량을 산다', need: '재산 5', cond: () => G.stats.wealth >= 5, run: () => { add('wealth', -5); add('food', 12); return '말린 고기와 쌀을 넉넉히 샀다.'; } },
@@ -726,7 +726,7 @@ const EVENTS = [
       { t: atSea() ? '상선을 턴다' : '창고에서 훔친다', tag: '위험', cond: () => !isNavy(), need: '해군은 불가', run: () => { add('rep', -6); if (P(0.65)) { add('food', R(12, 18)); return '들키지 않고 식량을 챙겼다.'; } hurt(8); return '들켜서 얻어맞았다.'; } },
       { t: '허리띠를 졸라맨다', run: () => '조금만 더 버텨 보기로 했다.' },
     ] },
-  { id: 'p_spoil', w: 1.5, tag: 'bad', cond: () => atSea(), title: '배 위의 사고',
+  { id: 'p_spoil', w: 0.7, cd: 24, tag: 'bad', cond: () => atSea(), title: '배 위의 사고',
     text: () => pick(['창고를 열자 시큼한 냄새가 났다. 고기가 상했다.', '밤사이 쥐 떼가 식량 창고를 습격했다.', '선원 한 명이 몰래 식량을 빼돌리다 걸렸다.']),
     choices: [
       { t: '상한 건 버린다', run: () => { add('food', -R(5, 9)); return '아깝지만 바다에 버렸다.'; } },

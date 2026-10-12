@@ -494,8 +494,7 @@ function upkeep() {
   }
 
   G.deltas = {}; // 계절 정산은 로그에 남기지 않는다
-  if (bought && !G.flags.boughtLogged) log('식량 구입', '식량이 바닥나 재산을 털어 비상식량을 샀다.', 'bad');
-  G.flags.boughtLogged = bought;
+  // 비상식량 구입은 조용히 처리한다 (기록에 남기지 않음)
   if (starving && !G.flags.starveLogged) log('굶주림', '먹을 것이 없다. 하루하루 몸이 말라간다.', 'bad');
   G.flags.starveLogged = starving;
   if (s.hp <= 0) G.deathCause = G.deathCause || (starving ? '굶주림으로 사망' : '병으로 사망');
@@ -622,7 +621,8 @@ function tick() {
   const due = G.later.filter(l => l.at <= G.ticks);
   if (due.length) { G.later = G.later.filter(l => l.at > G.ticks); due.forEach(l => G.queue.push(l.id)); }
   // 식량 위기는 확률과 상관없이 찾아온다
-  if (G.stats.food < 10 && !isCelestial() && G.age >= 10 && !(G.ticks - (G.seen.g_supply ?? -99) < 8)) G.queue.push('g_supply');
+  // 정말 바닥났을 때만, 6년에 한 번까지
+  if (G.stats.food < 5 && !isCelestial() && G.age >= 10 && !(G.ticks - (G.seen.g_supply ?? -999) < 24)) G.queue.push('g_supply');
   if (G.queue.length) { const id = G.queue.shift(); startEvent(EVENTS.find(e => e.id === id)); return; }
   if (P(EVENT_CHANCE)) {
     const ev = pickEvent();
