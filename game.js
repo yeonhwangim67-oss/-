@@ -452,9 +452,13 @@ function flushNotes() {
 function upkeep() {
   const s = G.stats, d = D();
   const living = G.age < 18 && G.job.type === 'none';
-  let eat = living && G.age < 12 ? 2 : 3;
-  if (isPirate()) eat += Math.floor(s.crew / 40);
-  add('food', -eat);
+  // 식량 소비 (소수점은 계절을 넘어 누적): 아이 1.5, 어른 2.5, 해적은 선원 50명당 +1
+  let eat = living && G.age < 12 ? 1.5 : 2.5;
+  if (isPirate()) eat += s.crew / 50;
+  G.hunger = (G.hunger || 0) + eat;
+  const ate = Math.floor(G.hunger);
+  G.hunger -= ate;
+  add('food', -ate);
 
   // 식량은 기본적으로 줄어든다. 채우려면 이벤트·선택으로 구해야 한다
   const bonus = (G.place.foodBonus || 0) + sumMod('foodBonus');
@@ -464,7 +468,7 @@ function upkeep() {
     switch (G.job.type) {
       case 'navy': add('wealth', 1 + Math.floor(G.job.rank / 3)); add('food', 2); if (P(0.25)) add('rep', 1); break;
       case 'pirate': add('food', 1 + R(0, 2) + Math.floor(s.crew / 50) + bonus); if (P(0.4)) add('wealth', R(1, 3)); break;
-      case 'retired': add('food', 1 + bonus); if (P(0.4)) add('wealth', 1); break;
+      case 'retired': add('food', 2 + bonus); if (P(0.4)) add('wealth', 1); break;
       default: add('food', 2 + bonus); if (P(0.5)) add('wealth', 1);
     }
   }
