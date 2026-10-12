@@ -96,8 +96,15 @@ const EVENTS = [
       if (G.stats.wealth >= 8 && P(0.7)) { add('wealth', -4); add('hp', 4); return '심한 열이 났지만 의사가 와서 금방 나았다.'; }
       add('hp', 2); return '며칠을 앓았지만 끝내 이겨냈다.';
     } },
-  { id: 'c_friend', w: 2, tag: 'good', cond: () => G.age >= 4 && G.age < 16, title: '새 친구',
-    run: () => { add('conn', R(3, 6)); return pick(['이웃 마을에서 온 아이와 친구가 되었다. 둘은 함께 바다를 누비자고 약속했다.', '말수 적은 대장장이 아들과 친해졌다.', '거짓말쟁이로 소문난 아이였지만 같이 노는 건 즐거웠다.']); } },
+  { id: 'c_friend', w: 2, tag: 'good', cond: () => G.age >= 4 && G.age < 16 && !isCelestial(), title: '새 친구',
+    text: () => pick(['이웃 마을에서 온 아이가 말을 걸어왔다.', '말수 적은 대장장이 아들이 당신을 따라다닌다.', '거짓말쟁이로 소문난 아이가 같이 놀자고 한다.']),
+    choices: [
+      { t: '비밀 기지를 함께 만든다', run: () => { add('conn', R(3, 5)); train(1); return '바닷가 동굴에 둘만의 기지를 만들었다.'; } },
+      { t: '바다를 누비자고 약속한다', run: () => { add('conn', 4); G.flags.promise = true; return '"언젠가 같이 배를 타자!" 새끼손가락을 걸었다.'; } },
+      { t: '누가 더 센지 겨룬다', enemy: 18, run: () => fightResult(fight(18, 0, '친구'),
+          () => { add('conn', 3); return '이겼다. 친구는 분해하면서도 웃었다.'; },
+          () => { add('conn', 3); return '졌다. 둘이 나란히 누워 하늘을 봤다.'; }) },
+    ] },
   { id: 'c_festival', w: 1.5, tag: 'good', cond: () => G.age < 18, title: '마을 축제',
     text: () => pick(['풍어제가 열렸다. 온 마을이 들떠 있다.', '불꽃놀이 축제의 날이다.', '수확제가 열렸다. 광장에 음식 냄새가 가득하다.']),
     choices: [
@@ -492,7 +499,13 @@ const EVENTS = [
       { t: '바다로 간다', run: () => '하늘은 다음에.' },
     ] },
   { id: 'p_feast', w: 1.5, tag: 'good', cond: () => isPirate() && G.stats.food >= 10, title: '연회',
-    run: () => { add('food', -5); add('hp', 6); add('conn', 2); add('crew', 1); return pick(['밤새 노래하고 마셨다. 선원들의 사기가 하늘을 찌른다.', '「빙크스의 술」을 다 같이 불렀다.']); } },
+    text: '오늘은 좋은 날이다. 선원들이 연회를 열자고 조른다.',
+    choices: [
+      { t: '밤새 퍼마신다', run: () => { add('food', -8); add('hp', 8); add('conn', 2); add('crew', 1); return '「빙크스의 술」을 다 같이 불렀다. 사기가 하늘을 찌른다.'; } },
+      { t: '근처 마을 사람들도 부른다', run: () => { add('food', -10); add('rep', 6); add('conn', 4); return '해적과 주민이 함께 춤추는 이상한 밤이었다.'; } },
+      { t: '팔씨름 대회를 연다', run: () => { add('food', -4); train(2); add('crew', 1); return '선원들의 실력을 확인했다. 신입 하나가 의외로 강하다.'; } },
+      { t: '조촐하게 끝낸다', run: () => { add('food', -2); add('hp', 3); return '내일 항해를 위해 일찍 잤다.'; } },
+    ] },
   { id: 'p_quarrel', w: 1.2, cond: () => isPirate() && G.stats.crew >= 10, title: '동료 갈등',
     text: '두 간부가 배의 진로를 놓고 칼을 뽑았다.',
     choices: [
@@ -866,6 +879,160 @@ const EVENTS = [
     choices: [
       { t: '해적인 척 잠입한다', tag: '위험', run: () => { if (P(0.55 + G.skills.obs * 0.1)) { G.job.captures += R(2, 5); addMerit(R(8, 12)); return '밀거래 현장을 덮쳐 한꺼번에 체포했다.'; } hurt(R(10, 16)); return '정체가 들통나 집단 폭행을 당했다.'; } },
       { t: '밖에서 감시만 한다', run: () => { addMerit(R(2, 3)); add('conn', 2); return '드나드는 배를 모두 기록해 본부에 넘겼다.'; } },
+    ] },
+
+  /* =================== 이어지는 이야기 =================== */
+  /* 1. 표류자 */
+  { id: 'arc_castaway', w: 1.2, once: true, cond: () => G.age >= 12 && !isCelestial(), title: '표류자',
+    text: () => (atSea() ? '갑판 옆으로' : '해변으로') + ' 부서진 나뭇조각에 매달린 사람이 떠밀려 왔다. 아직 숨이 붙어 있다. 품 안에 무언가 묵직한 것이 보인다.',
+    choices: [
+      { t: '데려가 간호한다', desc: '식량을 나눠야 한다', run: () => {
+          add('food', -6); G.flags.castawayWho = pick(['prince', 'shipwright', 'fugitive']); later('arc_castaway2', 8, 16);
+          return '사흘 밤낮을 간호하자 그가 눈을 떴다. 이름도 말하지 않고 "이 은혜는 잊지 않겠다"는 말만 남기고 사라졌다.'; } },
+      { t: '품 속의 물건을 챙긴다', tag: '평판 하락', run: () => {
+          add('wealth', R(6, 12)); add('rep', -4); later('arc_castaway_rev', 12, 24);
+          return '금화가 든 주머니였다. 그가 정신을 차리기 전에 자리를 떴다.'; } },
+      { t: '해군에 넘긴다', run: () => { add('rep', 3); if (isNavy()) addMerit(2); return '해군이 그를 데려갔다. 수배자였는지 포상금이 나왔다.'; } },
+      { t: '못 본 척 지나간다', run: () => '파도 소리만 들렸다.' },
+    ] },
+  { id: 'arc_castaway2', forced: true, title: '그때의 표류자',
+    text: () => ({
+      prince: '오래전 당신이 살린 표류자가 찾아왔다. 그는 멸망한 왕국의 왕자였다. "나라를 되찾을 군자금이 필요하다. 함께해 주겠나?"',
+      shipwright: '오래전 당신이 살린 표류자가 찾아왔다. 그는 이름난 조선공이었다. "은혜를 갚게 해 주게. 무엇이든 만들어 주지."',
+      fugitive: '오래전 당신이 살린 표류자의 얼굴이 수배서에 실렸다. 임펠 다운 탈옥수였다. 그리고 오늘 밤, 그가 문을 두드렸다. "숨겨 줘."',
+    }[G.flags.castawayWho]),
+    choices: () => ({
+      prince: [
+        { t: '군자금을 보탠다', need: '재산 10', cond: () => G.stats.wealth >= 10, run: () => { add('wealth', -10); later('arc_castaway3', 16, 32); return '"반드시 갚겠다." 왕자는 깊이 고개를 숙였다.'; } },
+        { t: '직접 싸움에 나선다', enemy: 50, tag: '위험', run: () => fightResult(fight(50, 0.12, '찬탈자의 군대'),
+            () => { add('conn', 15); add('rep', 10); add('wealth', 20); rec('망국의 은인'); return '찬탈자를 몰아내고 왕자를 왕좌에 앉혔다. 왕국 전체가 당신의 이름을 외쳤다.'; },
+            () => '반란은 실패했다. 왕자는 다시 바다로 사라졌다.') },
+        { t: '정중히 거절한다', run: () => { add('conn', 3); return '왕자는 쓸쓸히 웃으며 떠났다.'; } },
+      ],
+      shipwright: [
+        { t: '튼튼한 배를 부탁한다', run: () => { G.flags.goodShip = true; rec('명장의 배'); return '폭풍에도 끄떡없는 배가 완성됐다. (도주 성공률 상승)' + (atSea() ? '' : ' 언젠가 바다에 나갈 때 쓰기로 했다.'); } },
+        { t: '동료가 되어 달라고 한다', cond: () => isPirate(), need: '해적만', run: () => { add('crew', 3); add('conn', 4); rec('천재 조선공 합류'); return '"좋지! 네 배는 내가 지킨다."'; } },
+        { t: '마을 사람들의 배를 고쳐 달라고 한다', run: () => { add('rep', 8); add('conn', 4); return '마을의 낡은 어선들이 새것처럼 바뀌었다.'; } },
+      ],
+      fugitive: [
+        { t: '숨겨 준다', tag: '위험', run: () => { if (P(0.7)) { add('conn', 8); rec('탈옥수의 은인'); return '해군이 마을을 뒤졌지만 그를 찾지 못했다. 그는 바다 너머 어딘가에서 당신에게 빚을 졌다.'; } hurt(12); add('rep', -8); return '들켰다. 해군에게 끌려가 심문을 받았다.'; } },
+        { t: '해군에 신고한다', run: () => { add('rep', 5); add('wealth', 10); if (isNavy()) { G.job.captures += 1; addMerit(6); } return '그는 원망 어린 눈으로 끌려갔다.'; } },
+        { t: '배를 내주고 떠나보낸다', run: () => { add('wealth', -5); add('conn', 4); return '"살아남아." 짧게 말하고 등을 돌렸다.'; } },
+      ],
+    }[G.flags.castawayWho]) },
+  { id: 'arc_castaway3', forced: true, title: '왕의 편지',
+    text: '먼 나라에서 왕의 인장이 찍힌 편지가 도착했다. 그때의 왕자가 마침내 나라를 되찾았다고 한다.',
+    choices: [
+      { t: '초대에 응한다', run: () => { add('wealth', 30); add('conn', 12); rec('망국의 은인'); return '왕궁 연회의 상석에 앉았다. "이 나라의 은인이다."'; } },
+      { t: '편지만 간직한다', run: () => { add('rep', 6); return '답장 대신 바다를 향해 잔을 들었다.'; } },
+    ] },
+  { id: 'arc_castaway_rev', forced: true, title: '돌아온 표류자',
+    text: '언젠가 당신이 금화를 털었던 그 표류자가 나타났다. 이제 그는 칼을 찬 현상금 사냥꾼이다. "기억하나?"',
+    choices: [
+      { t: '맞서 싸운다', enemy: () => Math.round(power() * 0.9 / D().enemy), run: () => fightResult(fight(Math.round(power() * 0.9 / D().enemy), 0.1, '복수자'),
+          () => { add('rep', -3); return '그를 쓰러뜨렸다. 마음 한구석이 무겁다.'; },
+          () => '처절하게 당했다. 그는 금화 한 닢을 던지고 떠났다.') },
+      { t: '사과하고 돈을 돌려준다', need: '재산 15', cond: () => G.stats.wealth >= 15, run: () => { add('wealth', -15); add('rep', 5); add('conn', 3); return '그는 한참을 노려보다 칼을 거뒀다. "그때 넌 어렸지."'; } },
+      { t: '도망친다', run: () => { if (P(escapeChance(0.5))) return '골목으로 사라졌다. 언젠가 또 올 것이다.'; hurt(10); return '등에 칼을 맞았다.'; } },
+    ] },
+
+  /* 2. 빚 */
+  { id: 'g_loan', w: 0.8, cd: 40, cond: () => G.age >= 18 && G.stats.wealth < 20 && !isCelestial() && !G.flags.debt, title: '사채업자',
+    text: '금니를 번쩍이는 사채업자가 다가왔다. "돈이 궁해 보이는구먼. 25만큼 빌려주지. 이자는… 나중에 얘기하고."',
+    choices: [
+      { t: '빌린다', run: () => { add('wealth', 25); G.flags.debt = true; later('arc_debt', 8, 12); return '두툼한 돈주머니를 받았다. 사채업자가 이를 드러내며 웃었다.'; } },
+      { t: '거절한다', run: () => '"마음 바뀌면 찾아오라고."' },
+    ] },
+  { id: 'arc_debt', forced: true, title: '빚 독촉',
+    text: '사채업자가 덩치 셋을 데리고 나타났다. "이자까지 35. 오늘 갚아야겠어."',
+    choices: [
+      { t: '깨끗이 갚는다', need: '재산 35', cond: () => G.stats.wealth >= 35, run: () => { add('wealth', -35); G.flags.debt = false; return '돈을 던져 주자 그들은 아쉬운 듯 물러났다.'; } },
+      { t: '몸으로 갚는다', run: () => { hurt(R(8, 14)); train(2); add('wealth', -Math.min(G.stats.wealth, 10)); G.flags.debt = false; return '반년 동안 그들의 배에서 노예처럼 일했다.'; } },
+      { t: '덩치들을 때려눕힌다', enemy: 40, run: () => fightResult(fight(40, 0.05, '사채업자 일당'),
+          () => { G.flags.debt = false; add('rep', -3); return '덩치들을 바다에 던졌다. 사채업자는 다시 나타나지 않았다.'; },
+          () => { add('wealth', -Math.min(G.stats.wealth, 15)); G.flags.debt = false; return '흠씬 맞고 가진 것을 다 빼앗겼다.'; }) },
+      { t: '야반도주한다', run: () => { add('rep', -8); G.flags.debt = false; later('arc_debt', 16, 24); return '밤배를 타고 섬을 떠났다. 그들이 포기할까?'; } },
+    ] },
+
+  /* 3. 반쪽 지도 */
+  { id: 'g_halfmap', w: 0.8, once: true, cond: () => G.age >= 16 && !isCelestial(), title: '찢어진 지도',
+    text: '노점 구석에 반쪽만 남은 보물 지도가 있다. 상인은 "나머지 반쪽을 가진 놈이 어딘가 있을 거요"라며 웃는다.',
+    choices: [
+      { t: '산다', need: '재산 8', cond: () => G.stats.wealth >= 8, run: () => { add('wealth', -8); later('arc_halfmap', 12, 24); return '반쪽 지도를 품에 넣었다. 섬 하나의 해안선과 붉은 X의 절반.'; } },
+      { t: '훔친다', tag: '위험', run: () => { if (P(0.6)) { add('rep', -3); later('arc_halfmap', 12, 24); return '상인이 한눈파는 사이 지도를 챙겼다.'; } hurt(5); add('rep', -6); return '붙잡혀 혼쭐이 났다.'; } },
+      { t: '사기라고 생각한다', run: () => '반쪽짜리 지도에 돈을 쓸 바보는 없다.' },
+    ] },
+  { id: 'arc_halfmap', forced: true, title: '나머지 반쪽',
+    text: '주점에서 낯선 사람이 당신의 지도를 흘끗 보더니, 자기 품에서 꼭 맞는 반쪽을 꺼냈다.',
+    choices: [
+      { t: '동업해서 함께 찾는다', run: () => { if (P(0.6)) { add('wealth', R(25, 40)); add('conn', 5); rec('반쪽 지도의 보물'); return '두 지도를 맞추자 섬이 드러났다. 보물을 사이좋게 나눴다.'; } add('conn', 3); return '보물 상자는 이미 비어 있었다. 대신 좋은 친구가 생겼다.'; } },
+      { t: '반쪽을 빼앗는다', enemy: 40, run: () => fightResult(fight(40, 0.06, '지도의 주인'),
+          () => { add('wealth', R(35, 50)); add('rep', -6); rec('반쪽 지도의 보물'); return '지도를 빼앗아 혼자 보물을 찾았다. 금화가 산더미다.'; },
+          () => { return '오히려 내 반쪽까지 빼앗겼다.'; }) },
+      { t: '내 반쪽을 판다', run: () => { add('wealth', 14); return '흥정 끝에 꽤 좋은 값을 받았다.'; } },
+    ] },
+
+  /* 4. 부두의 아이 */
+  { id: 'g_orphan', w: 0.8, once: true, cond: () => G.age >= 25 && G.age <= 55 && !isCelestial(), title: '부두의 아이',
+    text: '부두에서 비쩍 마른 아이가 생선을 훔치다 붙잡혔다. 어른들이 몽둥이를 들었다. 아이가 당신을 바라본다.',
+    choices: [
+      { t: '아이를 거둔다', desc: '오래 걸리는 선택이다', run: () => { add('food', -5); G.flags.ward = true; later('arc_orphan', 40, 56); rec('아이를 거둠'); return '생선값을 대신 내고 아이의 손을 잡았다. 아이는 말없이 따라왔다.'; } },
+      { t: '생선값만 내준다', run: () => { add('wealth', -2); add('rep', 3); return '아이는 꾸벅 인사하고 달아났다.'; } },
+      { t: '못 본 척한다', run: () => '등 뒤에서 아이의 울음소리가 들렸다.' },
+    ] },
+  { id: 'arc_orphan', forced: true, title: '자란 아이',
+    text: () => '그때 거둔 아이가 어엿한 어른이 되었다. ' + (isPirate() ? '"선장, 나도 이 배의 정식 선원이 되고 싶어."' : isNavy() ? '"저도 해군이 되겠습니다. 당신처럼요."' : '"이제 제가 은혜를 갚을 차례예요."'),
+    choices: [
+      { t: '곁에 둔다', run: () => { if (isPirate()) add('crew', 4); if (isNavy()) add('crew', 3); add('conn', 6); add('hp', 5); rec('키운 아이와 함께'); return '아이는 이제 당신의 가장 믿음직한 오른팔이다.'; } },
+      { t: '자기 길을 가라고 한다', run: () => { add('rep', 6); add('conn', 4); rec('키운 아이의 독립'); return '"넓은 바다로 가라." 아이는 눈물을 닦으며 자기 배에 올랐다.'; } },
+    ] },
+
+  /* 5. 스승의 편지 */
+  { id: 'arc_mentor', w: 1.2, once: true, cond: () => G.age >= 20 && G.age <= 45 && G.records.some(r => r.endsWith('의 제자')), title: '스승의 편지',
+    text: '어린 시절 스승에게서 편지가 왔다. 떨리는 글씨다. "마을에 해적이 눌러앉았다. 이 늙은이로는 더는 버틸 수 없구나."',
+    choices: [
+      { t: '당장 돌아간다', enemy: 55, run: () => fightResult(fight(55, 0.1, '마을을 점거한 해적'),
+          () => { add('rep', 10); if (G.flags.swordOpen) learn('sword', 10); else train(5); rec('스승을 구함'); return '해적들을 몰아냈다. 스승은 당신의 손을 잡고 마지막 비기를 가르쳐 주었다.'; },
+          () => { hurt(8); return '혼자로는 역부족이었다. 스승과 함께 마을 사람들을 피신시켰다.'; }) },
+      { t: '돈과 사람을 보낸다', need: '재산 15', cond: () => G.stats.wealth >= 15, run: () => { add('wealth', -15); add('rep', 4); return '고용한 용병들이 마을을 지켜냈다는 답장이 왔다.'; } },
+      { t: '해군에 도움을 요청한다', run: () => { if (P(0.5 + G.stats.conn / 200)) { add('conn', 3); return '해군 함선이 마을로 향했다.'; } return '해군은 바쁘다며 답이 없었다. 스승의 소식은 그 뒤로 끊겼다.'; } },
+      { t: '답장만 쓴다', run: () => { add('rep', -4); return '펜을 들었다 놓았다를 반복했다.'; } },
+    ] },
+
+  /* 6. 수배서 속 옛 친구 */
+  { id: 'arc_friend', w: 1, once: true, cond: () => G.age >= 20 && !isCelestial(), title: '수배서 속 얼굴',
+    text: '새로 붙은 수배서에서 낯익은 얼굴을 봤다. 어릴 적 함께 바다를 누비자고 약속했던 친구다.',
+    choices: [
+      { t: '친구를 찾아 나선다', run: () => { later('arc_friend2', 4, 8); return '친구가 마지막으로 목격된 섬의 이름을 메모했다.'; } },
+      { t: '해군에 위치를 알린다', run: () => { if (isNavy()) { addMerit(6); G.job.captures += 1; return '정의를 택했다. 친구는 체포됐다.'; } add('wealth', 10); add('conn', -5); return '포상금을 받았다. 쓴맛이 오래 남았다.'; } },
+      { t: '수배서를 떼어 간직한다', run: () => '그 녀석, 웃는 얼굴은 그대로다.' },
+    ] },
+  { id: 'arc_friend2', forced: true, title: '옛 친구와의 재회',
+    text: '안개 낀 항구에서 마침내 친구를 찾았다. 그는 해적이 되어 있었다. "오랜만이다. 같이 가자, 그때 약속처럼."',
+    choices: [
+      { t: '함께 간다', cond: () => !isNavy(), need: '해군 불가', run: () => { if (isPirate()) { add('crew', 5); add('conn', 6); return '옛 친구가 부하들을 이끌고 합류했다. ' + addBounty(3000); } add('conn', 8); return '함께 바다를 누비지는 못했지만 밤새 약속을 다시 나눴다.'; } },
+      { t: '자수를 권한다', run: () => { if (P(0.4)) { add('rep', 8); return '친구는 오래 고민하더니 칼을 내려놓았다.'; } add('conn', 2); return '"넌 변했구나." 친구는 웃으며 떠났다.'; } },
+      { t: '체포한다', cond: () => isNavy(), need: '해군만', enemy: () => navyEnemy(), run: () => fightResult(fight(navyEnemy(), 0.05, '옛 친구'),
+          () => { G.job.captures += 1; addMerit(8); add('hp', -5); rec('친구에게 수갑을 채움'); return '수갑을 채우는 손이 떨렸다.'; },
+          () => '친구가 당신을 쓰러뜨리고 떠났다. 일부러 급소는 피했다.') },
+      { t: '술 한잔만 하고 헤어진다', run: () => { add('hp', 5); add('conn', 3); return '어린 시절 이야기로 밤을 새웠다.'; } },
+    ] },
+
+  /* 7. 전설의 섬 */
+  { id: 'g_rumor', w: 1, cd: 40, cond: () => G.age >= 18 && !isCelestial(), title: '전설의 섬',
+    text: () => `술 취한 항해사가 「${pick(['황금의 종이 울리는 섬', '거인의 무덤', '무지개 안개 너머의 섬', '바다 밑 신전'])}」 이야기를 한다. 해도에 없는 좌표까지 안다고 한다.`,
+    choices: [
+      { t: '원정대를 꾸린다', need: '재산 10', cond: () => G.stats.wealth >= 10, run: () => { add('wealth', -10); later('arc_rumor', 3, 6); return '배와 식량을 준비하고 좌표를 따라 출항했다.'; } },
+      { t: '좌표를 사서 되판다', run: () => { add('wealth', 4); return '귀가 솔깃한 다른 선원에게 좌표를 팔았다.'; } },
+      { t: '헛소리라며 웃어넘긴다', run: () => '전설은 전설일 뿐이다.' },
+    ] },
+  { id: 'arc_rumor', forced: true, title: '안개 속의 섬',
+    text: '며칠을 헤맨 끝에, 안개 속에서 정말로 섬이 나타났다. 해안에는 오래된 신전과 깊은 숲, 그리고 난파선 한 척이 보인다.',
+    choices: [
+      { t: '신전으로 간다', tag: '위험', run: () => { if (P(0.5)) { add('wealth', R(30, 45)); rec('전설의 섬 발견'); return '신전 깊은 곳에 황금이 쌓여 있었다!'; } hurt(R(12, 18)); return '함정이 작동했다. 무너지는 신전에서 겨우 빠져나왔다.'; } },
+      { t: '숲으로 들어간다', run: () => { if (!G.fruit && P(0.3)) return '나무 꼭대기에 소용돌이 무늬 열매가 열려 있었다. 한 입 베어 물었다… ' + eatFruit(); add('food', R(10, 16)); train(2); return '거대한 짐승을 사냥하고 진귀한 과일을 따 왔다.'; } },
+      { t: '난파선을 뒤진다', run: () => { add('wealth', R(10, 18)); G.flags.history = true; return '난파선의 항해 일지에서 잃어버린 해적단의 이야기를 읽었다. 금화 몇 상자도 함께.'; } },
+      { t: '불길하다, 돌아간다', run: () => { add('hp', 3); return '안개가 걷히자 섬은 온데간데없었다.'; } },
     ] },
 
   /* =================== 노년 =================== */

@@ -13,33 +13,40 @@
 
 <!-- ===== 시작 화면 ===== -->
 <section id="start" class="screen">
-  <div class="start-wrap">
-    <header class="start-head">
-      <p class="eyebrow">ONE PIECE 세계관 · 텍스트 인생 시뮬레이션</p>
-      <h1>대해적시대 연대기</h1>
-      <p class="lead">1분에 한 살, 15초마다 한 계절. 계절이 바뀔 때마다 30% 확률로 사건이 찾아온다.<br>열 살에 꿈을 정하고, 열여덟에 바다로 나아가라.</p>
-    </header>
-
-    <div class="form-grid">
-      <label class="field">
-        <span>이름</span>
-        <input id="in-name" type="text" maxlength="12" placeholder="비워두면 무작위">
-      </label>
-      <div class="field">
-        <span>성별</span>
-        <div class="seg" id="in-gender">
-          <button type="button" data-v="남성" class="on">남성</button>
-          <button type="button" data-v="여성">여성</button>
-        </div>
+  <!-- 위에 고정: 이름·성별·시드·태어나기 -->
+  <header class="start-bar">
+    <div class="start-bar-inner">
+      <div class="brand">
+        <p class="eyebrow">ONE PIECE 세계관 · 텍스트 인생</p>
+        <h1>대해적시대 연대기</h1>
       </div>
-      <label class="field seed-field">
-        <span>시드</span>
-        <div class="seed-row">
-          <input id="in-seed" type="text" maxlength="24" spellcheck="false">
-          <button type="button" id="btn-reroll" class="ghost" title="새 시드">🎲</button>
+      <div class="start-fields">
+        <label class="field">
+          <span>이름</span>
+          <input id="in-name" type="text" maxlength="12" placeholder="비워두면 무작위">
+        </label>
+        <div class="field">
+          <span>성별</span>
+          <div class="seg" id="in-gender">
+            <button type="button" data-v="남성" class="on">남성</button>
+            <button type="button" data-v="여성">여성</button>
+          </div>
         </div>
-      </label>
+        <label class="field seed-field">
+          <span>시드</span>
+          <div class="seed-row">
+            <input id="in-seed" type="text" maxlength="24" spellcheck="false">
+            <button type="button" id="btn-reroll" class="ghost" title="새 시드">🎲</button>
+          </div>
+        </label>
+        <button id="btn-start" class="primary start-btn">태어나기</button>
+      </div>
     </div>
+    <p class="pick-summary" id="pick-summary"></p>
+  </header>
+
+  <div class="start-wrap">
+    <p class="lead">1분에 한 살, 15초마다 한 계절. 계절마다 20% 확률로 사건이, 15% 확률로 세계관 이야기가 찾아온다. 여덟 살에 스승을, 열 살에 꿈을 정하고, 열여덟에 바다로 나아가라. 같은 시드·출생지·선택이면 같은 인생이 펼쳐진다.</p>
 
     <h2 class="sec-title">출생지 <small>고른 곳에 따라 난이도가 달라진다</small></h2>
     <div id="place-grid" class="place-grid"></div>
@@ -47,11 +54,6 @@
     <h2 class="sec-title lineage-title">가문 <small>타고난 혈통. 전투·성장·이벤트가 달라진다</small></h2>
     <div id="lineage-grid" class="lineage-grid"></div>
     <p id="lineage-desc" class="lineage-desc"></p>
-
-    <div class="start-foot">
-      <p class="hint">같은 시드 + 같은 출생지 + 같은 선택이면 같은 인생이 펼쳐진다.</p>
-      <button id="btn-start" class="primary">태어나기</button>
-    </div>
   </div>
 </section>
 

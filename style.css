@@ -5,8 +5,8 @@
   --track: #232633;
   --line: #2a2d3b;
   --text: #e9e6df;
-  --muted: #8d8f9b;
-  --dim: #5f6270;
+  --muted: #a7a9b4;
+  --dim: #7b7e8c;
   --gold: #c9a54a;
   --gold-hi: #e0bf63;
   --gold-soft: rgba(201, 165, 74, .14);
@@ -36,8 +36,8 @@ body {
   background: var(--bg);
   color: var(--text);
   font-family: var(--sans);
-  font-size: 15px;
-  line-height: 1.6;
+  font-size: 16px;
+  line-height: 1.7;
   -webkit-font-smoothing: antialiased;
 }
 button { font: inherit; color: inherit; cursor: pointer; }
@@ -282,3 +282,49 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
 .year-sep { display: flex; align-items: center; gap: 12px; margin: 10px 0 0; font-family: var(--serif); font-size: 15px; font-weight: 700; color: var(--gold); }
 .year-sep::after { content: ""; flex: 1; height: 1px; background: var(--line); }
 .year-sep:first-child { margin-top: 0; }
+
+/* ---------- 시작 화면: 위에 고정된 설정 바 ---------- */
+.start-bar {
+  position: sticky; top: env(safe-area-inset-top, 0px); z-index: 5;
+  background: #11131b; border-bottom: 1px solid var(--line);
+  padding: 14px 16px 10px;
+}
+.start-bar-inner { max-width: 1180px; margin: 0 auto; display: flex; align-items: flex-end; gap: 24px; flex-wrap: wrap; }
+.brand h1 { font-family: var(--serif); font-size: 28px; font-weight: 900; margin: 0; line-height: 1.2; }
+.brand .eyebrow { margin: 0 0 2px; font-size: 11px; }
+.start-fields { flex: 1; display: flex; align-items: flex-end; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+.start-fields .field { min-width: 0; }
+.start-fields .field input { padding: 8px 12px; }
+.start-fields #in-name { width: 150px; }
+.start-fields #in-seed { width: 130px; }
+.start-fields .seg button { padding: 8px 14px; }
+.start-btn { padding: 10px 26px; }
+.pick-summary { max-width: 1180px; margin: 8px auto 0; font-size: 14px; color: var(--muted); }
+.pick-summary b { color: var(--gold-hi); font-weight: 500; }
+.start-wrap { max-width: 1180px; padding: 24px 16px 64px; }
+.lead { font-size: 15px; margin: 0 0 24px; max-width: 70ch; }
+.place-grid { grid-template-columns: repeat(auto-fill, minmax(210px, 1fr)); gap: 10px; }
+.place { padding: 12px 14px; gap: 4px; border-radius: 12px; }
+.place-name { font-size: 16px; }
+.place-desc { font-size: 13px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+@media (max-width: 700px) {
+  .start-bar { position: static; }
+  .start-bar-inner { gap: 10px; }
+  .brand h1 { font-size: 22px; }
+  .start-fields { justify-content: flex-start; }
+  .start-fields #in-name, .start-fields #in-seed { width: 120px; }
+  .start-btn { flex: 1 1 100%; }
+}
+
+/* ---------- 가독성 ---------- */
+.log { gap: 12px; }
+.entry { padding: 16px 20px; }
+.entry-head { margin-bottom: 6px; }
+.stamp { font-size: 13px; color: var(--dim); }
+.entry-title { font-size: 16px; }
+.entry-sit { font-size: 15px; line-height: 1.65; }
+.entry-choice { font-size: 14px; margin: 2px 0 4px; }
+.entry-text { font-size: 16px; line-height: 1.75; }
+.event p { font-size: 16px; line-height: 1.75; }
+.choice { padding: 13px 16px; font-size: 15.5px; }
+.card .sub { line-height: 1.6; }

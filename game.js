@@ -100,6 +100,8 @@ function train(n) { G.train += n; G.deltas.train = (G.deltas.train || 0) + n; }
 function maxHp() {
   return 100 + (G.lineage.maxHp || 0);
 }
+/** 이야기 이어가기: min~max 계절 뒤에 후속 이벤트가 찾아온다 */
+function later(id, min, max = min) { G.later.push({ id, at: G.ticks + R(min, max) }); }
 function rec(tag) { if (!G.records.includes(tag)) G.records.push(tag); }
 function note(title, text, kind = 'major') { G.notes.push({ title, text, kind }); }
 
@@ -382,7 +384,7 @@ function newGame({ name, gender, placeId, lineageId, seed }) {
     skills: Object.fromEntries(Object.keys(SKILLS).map(k => [k, 0])),
     skillXp: Object.fromEntries(Object.keys(SKILLS).map(k => [k, 0])),
     job: { type: 'none', stage: 0, bounty: 0, rank: 0, merit: 0, captures: 0 },
-    crewName: '', records: [], flags: {}, used: {}, seen: {},
+    crewName: '', records: [], flags: {}, used: {}, seen: {}, later: [],
     deltas: {}, extra: [], notes: [], logs: [], queue: [], pending: null,
     speed: prevSpeed, paused: false, dead: false, deathCause: '',
     random: { place: placeId === 'random', lineage: lineageId === 'random' },
@@ -575,6 +577,9 @@ function tick() {
   flushNotes();
   checkDeath();
   if (G.dead) return;
+  // 예약된 후속 이야기
+  const due = G.later.filter(l => l.at <= G.ticks);
+  if (due.length) { G.later = G.later.filter(l => l.at > G.ticks); due.forEach(l => G.queue.push(l.id)); }
   // 식량 위기는 확률과 상관없이 찾아온다
   if (G.stats.food < 10 && !isCelestial() && G.age >= 10 && !(G.ticks - (G.seen.g_supply ?? -99) < 8)) G.queue.push('g_supply');
   if (G.queue.length) { const id = G.queue.shift(); startEvent(EVENTS.find(e => e.id === id)); return; }
@@ -810,6 +815,8 @@ function renderPlaces() {
       <span class="place-sea">${PLACES.length}곳 중 하나</span>
       <span class="place-desc">시드가 태어날 곳을 정한다. 어디서 눈을 뜰지는 아무도 모른다.</span>
     </button>`;
+  const sel = selPlace === 'random' ? null : PLACES.find(p => p.id === selPlace);
+  updateSummary(sel ? `<b>${sel.name}</b> (${sel.diff})` : '<b>무작위 마을</b>');
   $('#place-grid').innerHTML = rand + PLACES.map(p => `
     <button type="button" class="place${p.id === selPlace ? ' on' : ''}" data-id="${p.id}">
       <div class="place-top"><span class="place-name">${p.name}</span><span class="badge d-${p.diff}">${p.diff}</span></div>
@@ -817,11 +824,18 @@ function renderPlaces() {
       <span class="place-desc">${p.desc}</span>
     </button>`).join('');
 }
+let summaryPlace = '', summaryLineage = '';
+function updateSummary(place, lineage) {
+  if (place) summaryPlace = place;
+  if (lineage) summaryLineage = lineage;
+  $('#pick-summary').innerHTML = `출생지 ${summaryPlace} · 가문 ${summaryLineage}`;
+}
 function renderLineages() {
   const items = [{ id: 'random', name: '무작위', desc: '대부분은 평범한 혈통이지만, 드물게 특별한 피를 타고난다. 출생지에 따라 나오는 가문이 달라진다.' }, ...LINEAGES];
   $('#lineage-grid').innerHTML = items.map(l => `
     <button type="button" class="lineage${l.id === selLineage ? ' on' : ''}" data-id="${l.id}">${l.name}</button>`).join('');
   $('#lineage-desc').textContent = items.find(l => l.id === selLineage).desc;
+  updateSummary(null, `<b>${items.find(l => l.id === selLineage).name}</b>`);
 }
 
 function begin(opts) {
