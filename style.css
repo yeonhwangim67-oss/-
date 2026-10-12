@@ -332,3 +332,8 @@ button:focus-visible { outline: 2px solid var(--gold-hi); outline-offset: 2px; }
 /* ---------- 열매 ---------- */
 .fruit-ability { margin: 8px 0 0; font-size: 14px; color: var(--text); }
 .fruit-awaken { margin: 8px 0 0; font-size: 14px; color: var(--gold-hi); }
+
+/* ---------- 가문 특성 ---------- */
+.traits { margin: 8px 0 0; padding-left: 18px; font-size: 13px; color: var(--gold-hi); }
+.traits li { margin: 2px 0; }
+.trait-line { display: block; margin-top: 4px; color: var(--gold-hi); font-size: 14px; }

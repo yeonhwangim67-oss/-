@@ -161,6 +161,7 @@ function skillName(k) {
 }
 /** 패기 수련 가능 여부 */
 function canHaki() {
+  if (G.lineage.haki && G.age >= 10) return true;
   if (G.age < 14) return false;
   const c = myCrew();
   return !!(G.flags.hakiOpen || (c && c.perk.hakiOpen) || (isNavy() && G.job.rank >= 4) || (isPirate() && (G.job.stage >= 1 || G.place.sea === '신세계')));
@@ -175,7 +176,7 @@ function learn(k, xp) {
   if (k === 'rokushiki' && !canRokushiki()) G.flags.rokushiki = true;
   if (k === 'sword') G.flags.swordOpen = true;
   if (G.skills[k] >= skillMax(k)) return;
-  G.skillXp[k] += xp * ((G.lineage.xp && G.lineage.xp[k]) || 1);
+  G.skillXp[k] += xp * ((G.lineage.xp && G.lineage.xp[k]) || 1) * (G.lineage.xpAll || 1);
   while (G.skills[k] < skillMax(k) && G.skillXp[k] >= skillNeed(k)) {
     G.skillXp[k] -= skillNeed(k);
     G.skills[k]++;
@@ -420,6 +421,7 @@ function newGame({ name, gender, placeId, lineageId, seed }) {
   G.stats.wealth = G.family.wealth;
   G.flags.kingInnate = P(lineage.king || 0.03);
   G.flags.celestial = famKey === 'celestial';
+  if (lineage.swordOpen) G.flags.swordOpen = true;
 
   rec(G.family.born);
   if (lineage.id !== 'none') rec(lineage.name);
@@ -584,6 +586,16 @@ function choose(i) {
 
 function checkDeath() {
   if (G.dead) return;
+  // 가문 특성: 죽을 상처에서 한 번 버틴다 (노환은 제외)
+  if (G.stats.hp <= 0 && G.lineage.lastStand && !G.flags.lastStandUsed && !/노환/.test(G.deathCause || '')) {
+    G.flags.lastStandUsed = true;
+    G.stats.hp = 15;
+    G.deathCause = '';
+    rec(G.lineage.id === 'd' ? 'D의 의지' : '불꽃의 부활');
+    log(G.lineage.id === 'd' ? 'D의 의지' : '불꽃의 몸',
+      G.lineage.id === 'd' ? '모두가 끝났다고 생각한 순간, 당신은 피투성이로 웃으며 일어섰다.' : '쓰러진 몸에서 검은 불꽃이 피어올랐다. 상처가 타오르며 닫혔다.', 'major');
+    return;
+  }
   if (G.stats.hp <= 0) {
     G.dead = true;
     if (!G.deathCause) G.deathCause = '부상 악화로 사망';
@@ -717,7 +729,8 @@ function renderSide() {
   $('#side').innerHTML = `
     <div class="card"><h3>${esc(G.name)}</h3><div class="sub">${G.gender} · ${G.family.name}</div>
       <div class="lineage-line"><span class="chip${L.id !== 'none' ? ' gold' : ''}">${L.name}</span>${G.random.lineage ? '<span class="rand">무작위</span>' : ''}</div>
-      ${L.id !== 'none' ? `<p class="desc">${L.desc}</p>` : ''}</div>
+      <p class="desc">${L.desc}</p>
+      <ul class="traits">${L.trait.map(t => `<li>${t}</li>`).join('')}</ul></div>
     <div class="card">
       <h3>${p.name}${G.random.place ? ' <span class="rand">무작위</span>' : ''}</h3>
       <dl class="kv"><dt>위치</dt><dd>${p.sea}</dd><dt>난이도</dt><dd><span class="badge d-${p.diff}">${p.diff}</span> ${DIFF[p.diff].name}</dd><dt>특이점</dt><dd>${p.tag}</dd></dl>
@@ -872,7 +885,8 @@ function renderLineages() {
   const items = [{ id: 'random', name: '무작위', desc: '대부분은 평범한 혈통이지만, 드물게 특별한 피를 타고난다. 출생지에 따라 나오는 가문이 달라진다.' }, ...LINEAGES];
   $('#lineage-grid').innerHTML = items.map(l => `
     <button type="button" class="lineage${l.id === selLineage ? ' on' : ''}" data-id="${l.id}">${l.name}</button>`).join('');
-  $('#lineage-desc').textContent = items.find(l => l.id === selLineage).desc;
+  const L = items.find(l => l.id === selLineage);
+  $('#lineage-desc').innerHTML = `${L.desc}${L.trait ? `<span class="trait-line">${L.trait.join(' · ')}</span>` : ''}`;
   updateSummary(null, `<b>${items.find(l => l.id === selLineage).name}</b>`);
 }
 

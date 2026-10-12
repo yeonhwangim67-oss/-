@@ -7,10 +7,13 @@
  *  choices 가 있으면 선택 대기, 없으면 run 즉시 실행
  * ========================================================= */
 
+/** 그 지역에 살고 있는가 (바다에 나가면 지역 이벤트는 끝) */
+const home = id => G.place.id === id && !atSea();
+
 /** 오니가시마에 살고 있는가 (탈출하면 섬 이벤트 종료) */
 const onOni = () => G.place.id === 'onigashima' && !atSea() && !G.flags.escaped;
 
-const DEAD_TEXT = '치명상을 입고 쓰러졌다. 다시는 일어나지 못했다…';
+const DEAD_TEXT = '치명상을 입고 쓰러졌다…';
 
 /** 결과 문구 헬퍼: fight 결과에 맞는 문장 반환 */
 function fightResult(r, win, lose) {
@@ -1051,6 +1054,94 @@ const EVENTS = [
           () => { add('rep', -8); if (P(0.5)) return '혼란 속에서 열매 상자를 낚아챘다… ' + eatFruit(); add('wealth', 15); return '열매는 놓쳤지만 금고를 털었다.'; },
           () => '경비들에게 몰매를 맞고 쫓겨났다.') },
       { t: '구경만 한다', run: () => '열매는 어느 거물 해적에게 낙찰됐다.' },
+    ] },
+
+  /* =================== 새 지역 =================== */
+  { id: 'pl_orange', w: 2, tag: 'bad', cond: () => home('orange') && G.age >= 6, title: '광대 해적단의 습격',
+    text: '빨간 코의 광대 선장이 이끄는 해적단이 마을에 대포를 쏘아 댄다. 마을 사람들은 모두 도망쳤다.',
+    choices: [
+      { t: '숨는다', run: () => { add('wealth', -R(1, 4)); return '지하실에서 포성이 멎기를 기다렸다.'; } },
+      { t: '가게를 지키는 개를 돕는다', run: () => { if (P(0.5)) { add('rep', 6); add('conn', 3); return '불길 속에서 개와 함께 주인의 가게를 지켜냈다.'; } hurt(6); return '불똥에 데었지만 개는 무사했다.'; } },
+      { t: '광대에게 맞선다', enemy: 35, tag: '위험', run: () => fightResult(fight(35, 0.08, '광대 해적'),
+          () => { add('rep', 10); train(2); return '광대 선장의 코를 날려버렸다. 몸이 조각조각 흩어지며 도망쳤다.'; },
+          () => '분리된 손에 목이 졸려 기절했다.') },
+    ] },
+  { id: 'pl_whiskey', w: 2, cond: () => home('whiskey') && G.age >= 8, title: '환영의 마을',
+    text: '오늘 밤 해적선이 들어왔다. 마을 어른들이 술잔을 들고 웃으며 환영한다. 그리고 다들 품속의 무기를 확인한다.',
+    choices: [
+      { t: '현상금 사냥에 따라간다', enemy: 30, run: () => fightResult(fight(30, 0.05, '술 취한 해적'),
+          () => { add('wealth', R(5, 10)); train(2); return '술에 곯아떨어진 해적을 묶었다. 내 몫의 현상금이 나왔다.'; },
+          () => '깨어난 해적에게 혼쭐이 났다.') },
+      { t: '해적들에게 몰래 알린다', run: () => { add('conn', 5); add('rep', -4); return '해적들은 고맙다며 금화를 쥐여 주고 밤바다로 달아났다.'; } },
+      { t: '잠이나 잔다', run: () => '오늘도 마을은 시끄럽다.' },
+    ] },
+  { id: 'pl_whiskey_agent', w: 1, once: true, cond: () => home('whiskey') && G.age >= 16, title: '비밀 조직의 스카우트',
+    text: '마을의 "시장"이 조용히 불렀다. "사장님을 위해 일할 요원을 찾고 있다. 번호를 받으면 돈은 넉넉하다."',
+    choices: [
+      { t: '요원이 된다', run: () => { add('wealth', 20); add('rep', -8); G.flags.agent = true; rec('비밀 조직 요원'); return '「Mr.」 번호가 적힌 명함을 받았다. 누가 사장인지는 아무도 모른다.'; } },
+      { t: '거절한다', run: () => '"그렇다면 오늘 밤 일은 잊는 게 좋을 거다."' },
+    ] },
+  { id: 'pl_littlegarden', w: 2, cond: () => home('littlegarden') && G.age >= 6, title: '거인의 결투',
+    text: '화산이 터지자 두 거인이 또 결투를 시작했다. 100년째, 승부는 나지 않았다.',
+    choices: [
+      { t: '가까이서 지켜본다', run: () => { train(3); return '거인들의 일격에 땅이 갈라졌다. 진짜 전사의 긍지를 봤다.'; } },
+      { t: '거인들에게 고기를 가져다준다', run: () => { add('food', -4); add('conn', 5); return '"꼬마, 고맙다! 게기기기기!" 거인들이 웃었다.'; } },
+      { t: '공룡 사냥에 나선다', enemy: 32, run: () => fightResult(fight(32, 0.06, '공룡'),
+          () => { add('food', 15); return '공룡 한 마리를 잡았다. 한 달은 배부르겠다.'; },
+          () => '공룡에게 쫓겨 나무 위에서 밤을 보냈다.') },
+    ] },
+  { id: 'pl_enies', w: 2, cond: () => home('enieslobby') && G.age >= 8, title: '사법의 섬',
+    text: () => G.age < 14 ? '정부 첩보기관이 체술에 재능 있는 아이들을 찾고 있다.' : '정의의 문이 열리고, 죄수 호송선이 안개 속으로 사라졌다.',
+    choices: () => G.age < 14 ? [
+      { t: '훈련생 선발에 나간다', tag: '육식 개방', run: () => { G.flags.rokushiki = true; learn('rokushiki', 8); hurt(6); rec('첩보원 훈련생'); return '혹독한 훈련이 시작됐다. 몸이 무기가 되는 비밀 체술, 육식을 배웠다.'; } },
+      { t: '거부한다', run: () => '어른들의 눈빛이 무서웠다.' },
+    ] : [
+      { t: '정의를 생각한다', run: () => { add('rep', 2); return '정의란 무엇일까. 저 문 너머의 사람들도 누군가의 가족이다.'; } },
+      { t: '죄수의 눈을 마주친다', run: () => { add('conn', 2); return '죄수가 희미하게 웃었다. 그 얼굴이 잊히지 않는다.'; } },
+    ] },
+  { id: 'pl_thriller', w: 1.5, tag: 'bad', cond: () => home('thriller'), title: '그림자 도둑',
+    text: '안개 속에서 기묘한 가위 소리가 들린다. 그림자를 빼앗는 자들이 돌아다닌다.',
+    choices: [
+      { t: '햇빛 아래 숨는다', run: () => { if (P(0.6)) return '그림자를 지켜냈다.'; hurt(8); return '그림자를 잃을 뻔했다. 온몸에 힘이 빠졌다.'; } },
+      { t: '좀비를 쫓아낸다', enemy: 35, run: () => fightResult(fight(35, 0.05, '좀비 병사'),
+          () => { train(2); add('rep', 3); return '소금을 입에 넣자 좀비가 그림자를 토해 내고 쓰러졌다.'; },
+          () => '좀비들에게 둘러싸여 간신히 빠져나왔다.') },
+      { t: '노래하는 해골과 대화한다', run: () => { add('conn', 3); add('hp', 3); return '"요호호호! 팬티를 보여 주시겠어요?" 이상하지만 다정한 해골이었다.'; } },
+    ] },
+  { id: 'pl_amazon', w: 2.5, cond: () => home('amazonlily') && G.age >= 6, title: '구사 전사의 훈련',
+    text: '아마존 릴리의 아이들은 뱀을 활 삼아 패기를 익힌다. 오늘도 훈련장에 함성이 울린다.',
+    choices: [
+      { t: '견문색 훈련', tag: '패기 개방', run: () => { G.flags.hakiOpen = true; learn('obs', 6); return '눈을 감고 날아오는 화살을 피했다. 세상의 "목소리"가 들린다.'; } },
+      { t: '무장색 훈련', tag: '패기 개방', run: () => { G.flags.hakiOpen = true; learn('arm', 6); return '화살 끝에 검은 기운을 실어 바위를 뚫었다.'; } },
+      { t: '바다왕류 사냥', enemy: 45, run: () => fightResult(fight(45, 0.06, '바다왕류'),
+          () => { add('food', 12); add('rep', 5); return '활 한 발로 바다왕류를 잡았다. 전사들이 환호했다.'; },
+          () => '바다왕류에게 배가 뒤집혔다.') },
+    ] },
+  { id: 'pl_amazon_empress', w: 1, once: true, cond: () => home('amazonlily') && G.age >= 12, title: '뱀 공주의 행차',
+    text: '세계에서 가장 아름답다는 황제가 행차한다. 그녀의 눈길이 당신에게 머물렀다.',
+    choices: [
+      { t: '고개를 숙인다', run: () => { add('conn', 4); return '"좋다. 고개를 들어도 된다." 황제가 지나갔다.'; } },
+      { t: '똑바로 바라본다', tag: '위험', run: () => { if (P(0.5)) { add('rep', 8); add('conn', 6); rec('황제의 눈에 듦'); return '"재미있는 녀석이로군." 황제가 처음으로 웃었다.'; } hurt(15); return '눈 깜짝할 사이 돌이 될 뻔했다.'; } },
+    ] },
+  { id: 'pl_punkhazard', w: 1.5, tag: 'bad', cond: () => home('punkhazard'), title: '독가스 경보',
+    text: '연구소에서 독가스가 새어 나왔다. 불과 얼음 사이로 보라색 안개가 번진다.',
+    choices: [
+      { t: '얼음 쪽으로 도망친다', run: () => { hurt(R(3, 6)); return '혹한 속에서 몸을 웅크리고 버텼다.'; } },
+      { t: '불타는 쪽으로 도망친다', run: () => { hurt(R(2, 8)); return '뜨거운 열기 속을 뛰었다.'; } },
+      { t: '실험실 아이들을 데리고 나간다', run: () => { hurt(R(6, 10)); add('rep', 10); add('conn', 5); rec('펑크 해저드의 아이들을 구함'); return '사탕으로 아이들을 길들이던 과학자의 실체를 봤다. 아이들 손을 잡고 안개를 빠져나왔다.'; } },
+    ] },
+  { id: 'pl_punk_escape', w: 1.5, once: true, cond: () => home('punkhazard') && G.age >= 10 && G.age < 18, title: '섬을 떠날 기회',
+    text: '해군 함선이 연구소를 조사하러 왔다. 지금이라면 섬을 빠져나갈 수 있다.',
+    choices: [
+      { t: '해군에 도움을 청한다', run: () => { G.flags.escaped = true; add('rep', 4); G.place = findPlace('marineford'); rec('펑크 해저드 탈출'); return '해군 장교가 코트를 덮어 주었다. 마린포드에서 새 삶이 시작된다.'; } },
+      { t: '숨어서 남는다', run: () => '아직은 이 섬을 떠날 수 없다.' },
+    ] },
+  { id: 'pl_egghead', w: 2, tag: 'good', cond: () => home('egghead') && G.age >= 8, title: '미래섬의 실험',
+    text: '천재 과학자가 조수를 찾는다. "자네, 과학에 몸을 바칠 생각 없나?"',
+    choices: [
+      { t: '실험체가 된다', tag: '위험', run: () => { if (P(0.6)) { train(6); rec('미래섬의 실험체'); return '몸에 이상한 장치를 달았다. 근력이 비약적으로 늘었다.'; } hurt(12); return '실험이 폭발했다. 아프로 머리가 되었다.'; } },
+      { t: '조수로 일한다', run: () => { add('wealth', R(6, 10)); add('conn', 4); return '미래 기술을 다루는 법을 배웠다.'; } },
+      { t: '로봇과 논다', run: () => { add('hp', 5); return '귀여운 로봇이 하루 종일 따라다녔다.'; } },
     ] },
 
   /* =================== 노년 =================== */
